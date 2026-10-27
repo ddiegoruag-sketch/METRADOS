@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Metrados de Obra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+[hidden]{display:none!important}
+body{margin:0}
+img{max-width:100%}
+
+/* Layout: hoja de plano. Columna de datos (rótulo) junto a una lámina cuadriculada con el dibujo; planilla de acero y memoria debajo. */
+:root{
+  --paper:#eef1ef; --sheet:#fbfcfb; --ink:#14202c; --ink-2:#56636f; --line:#cfd7d3; --grid:#e3e9e6;
+  --accent:#1d5bd0; --accent-ink:#ffffff; --hi:#f2b705; --hi-ink:#1d1600; --concrete:#e2e7e4;
+  --danger:#b42318; --ok:#1d7a4a; --tape:#c98a1b; --mud:#9db4cc;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0c1622; --sheet:#112032; --ink:#e3ecf4; --ink-2:#8fa3b6; --line:#24405c; --grid:#16304a;
+    --accent:#5aa0ff; --accent-ink:#06121f; --hi:#f2c230; --hi-ink:#1d1600; --concrete:#18304a;
+    --danger:#ff7b6b; --ok:#4cc38a; --tape:#e3a93c; --mud:#5f7d9c; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0c1622; --sheet:#112032; --ink:#e3ecf4; --ink-2:#8fa3b6; --line:#24405c; --grid:#16304a;
+  --accent:#5aa0ff; --accent-ink:#06121f; --hi:#f2c230; --hi-ink:#1d1600; --concrete:#18304a;
+  --danger:#ff7b6b; --ok:#4cc38a; --tape:#e3a93c; --mud:#5f7d9c; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.app{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.05}
+h1{font-size:clamp(40px,7vw,64px);text-transform:uppercase}
+h2{font-size:22px;text-transform:uppercase;letter-spacing:.03em}
+h3{font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{color:var(--ink-2);max-width:60ch;margin-top:8px}
+.top{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between}
+.brand{min-width:0;flex:1 1 420px;display:flex;flex-direction:column;gap:4px}
+.rotulo{margin:0;display:grid;grid-template-columns:auto auto;border:1.5px solid var(--ink);background:var(--sheet);font-family:var(--f-mono);font-size:12px;flex:0 1 380px;min-width:0}
+.rotulo>div{display:contents}
+.rotulo dt{padding:6px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
+.rotulo dd{margin:0;padding:6px 10px;border-bottom:1px solid var(--line);min-width:0}
+.rotulo>div:last-child dt,.rotulo>div:last-child dd{border-bottom:0}
+.rotulo input{width:100%;border:0;background:transparent;font:inherit;color:var(--ink);padding:0}
+.rotulo input:focus{outline:2px solid var(--accent);outline-offset:2px}
+
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--ink);overflow-x:auto;scrollbar-width:none}
+.tabs button{appearance:none;border:1.5px solid transparent;border-bottom:0;background:transparent;color:var(--ink-2);font-family:var(--f-display);font-weight:600;font-size:20px;text-transform:uppercase;letter-spacing:.04em;padding:8px 16px 6px;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;margin-bottom:-1.5px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--sheet);color:var(--ink);border-color:var(--ink)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+.badge{font-family:var(--f-mono);font-size:12px;background:var(--hi);color:var(--hi-ink);border-radius:999px;padding:0 7px;line-height:18px;font-weight:600}
+
+.work{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.work{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
+@media (max-width:900px){.panel{position:static}}
+.panel h2{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel h2 small{font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--ink-2);letter-spacing:.06em}
+fieldset{border:0;border-top:1px solid var(--line);margin:0;padding:12px 0 0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);padding:0 6px 0 0}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.row.r3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:12.5px;color:var(--ink-2);font-weight:500}
+.f label b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.f input,.f select,.sup input{width:100%;font-family:var(--f-mono);font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:7px 9px;min-width:0}
+.f input:focus,.f select:focus,.sup input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.f .help{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2)}
+.f .help.err{color:var(--danger)}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2)}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.btn{appearance:none;border:1.5px solid var(--ink);background:var(--ink);color:var(--sheet);font-family:var(--f-display);font-weight:600;font-size:19px;letter-spacing:.04em;text-transform:uppercase;padding:9px 16px;border-radius:4px;cursor:pointer}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.btn.small{font-size:15px;padding:5px 10px}
+
+.out{display:flex;flex-direction:column;gap:16px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tile{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .v{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.tile .v small{font-family:var(--f-mono);font-size:13px;font-weight:500;margin-left:3px}
+.tile .l{font-size:12.5px;color:var(--ink-2)}
+.tile.dark{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.tile.dark .l{color:var(--sheet);opacity:.75}
+
+.sheet{background-color:var(--sheet);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:20px 20px;border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.sheet-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+.sheet-head .note{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2)}
+.draw{overflow-x:auto;min-width:0}
+.draw svg{display:block;width:100%;height:auto}
+.draw.wide svg{min-width:660px}
+.draw-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.draw-row>.draw{flex:1 1 260px}
+.pill{display:inline-block;align-self:flex-start;max-width:100%;background:var(--ink);color:var(--sheet);border-radius:999px;padding:6px 14px;font-weight:600;font-size:14px}
+.pill b{font-family:var(--f-mono);color:var(--hi)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:3px;background:var(--ink)}
+.legend i.a{background:var(--accent)}
+.legend i.t{height:5px;background:var(--tape)}
+.legend i.m{height:10px;background:var(--mud)}
+.legend i.s{width:6px;height:6px;border-radius:50%;background:var(--ink)}
+.legend i.e{background:var(--ok)}
+.legend i.c{height:10px;background:var(--concrete);border:1px solid var(--ink-2)}
+
+svg .t{fill:var(--ink-2);font-family:var(--f-mono);font-size:12px}
+svg .tk{fill:var(--ink);font-family:var(--f-mono);font-size:13px;font-weight:600}
+svg .ta{fill:var(--accent);font-family:var(--f-mono);font-size:12px;font-weight:600}
+svg .conc{fill:var(--concrete);stroke:var(--ink-2);stroke-width:1}
+svg .soil{fill:none;stroke:var(--ink-2);stroke-width:1;stroke-dasharray:5 4}
+svg .hatchbg{fill:var(--sheet)}
+svg .hatchln{stroke:var(--ink-2);stroke-width:1}
+svg .edge{fill:none;stroke:var(--ink-2);stroke-width:1}
+svg .bar{fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+svg .dot{fill:var(--ink)}
+svg .est{stroke:var(--accent);stroke-width:1.3}
+svg .estr{fill:none;stroke:var(--accent);stroke-width:2.4}
+svg .dim{stroke:var(--ink-2);stroke-width:1;fill:none}
+svg .tape{fill:var(--tape)}
+svg .tapeln{stroke:var(--tape);stroke-width:3}
+svg .mud{fill:var(--mud);opacity:.75}
+svg .scr{fill:var(--ink)}
+svg .waste{fill:var(--hi);opacity:.55}
+svg .esqln{fill:none;stroke:var(--ok);stroke-width:3}
+svg .zone{stroke:var(--accent);stroke-width:1;fill:none}
+
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tbl-wrap{overflow-x:auto;min-width:0}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--f-mono);white-space:nowrap}
+tfoot td{font-weight:600;border-bottom:0;border-top:1.5px solid var(--ink)}
+
+.memoria{list-style:none;margin:0;padding:0;counter-reset:m;display:flex;flex-direction:column}
+.memoria li{counter-increment:m;display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.memoria li:last-child{border-bottom:0}
+.memoria li::before{content:counter(m,decimal-leading-zero);font-family:var(--f-mono);font-size:12px;color:var(--accent);padding-top:2px;grid-row:span 2}
+.memoria .mt{font-weight:600;font-size:14px}
+.memoria .mf{font-family:var(--f-mono);font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+.memoria .mf b{color:var(--ink);font-weight:600}
+.memoria .mf .r{background:var(--hi);color:var(--hi-ink);padding:0 5px;border-radius:3px;font-weight:600;white-space:nowrap}
+.errbox{border:1.5px solid var(--danger);color:var(--danger);background:var(--sheet);border-radius:6px;padding:12px 14px;font-weight:500}
+
+.ori-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ori{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ori.on{border:1.5px solid var(--ink);background:var(--sheet)}
+.ori-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-family:var(--f-mono);font-size:11px;padding:2px 8px;border-radius:999px;background:var(--ink);color:var(--sheet)}
+.tag.good{background:var(--ok);color:var(--sheet)}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0;font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.ori .btn{align-self:flex-start}
+.res-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 4px 3px 12px;font-size:13px}
+.chip em{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--ink-2)}
+.chip button{appearance:none;border:0;background:transparent;color:var(--ink-2);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1}
+.chip button:hover{background:var(--danger);color:var(--sheet)}
+.chip button:focus-visible{outline:2px solid var(--accent)}
+tr.grp td{font-family:var(--f-display);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--paper);border-bottom:1.5px solid var(--ink)}
+tr.par td{font-weight:600}
+tr.det td{color:var(--ink-2);font-size:13px;border-bottom-style:dashed}
+tr.det td:nth-child(2){padding-left:22px}
+.code{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
+.empty{display:flex;flex-direction:column;gap:12px;align-items:flex-start;padding:28px 20px;border:1.5px dashed var(--line);border-radius:6px;background:var(--sheet)}
+.empty p{color:var(--ink-2);max-width:56ch}
+.copyfallback{width:100%;min-height:120px;font-family:var(--f-mono);font-size:12px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:8px}
+
+.rend summary{cursor:pointer;font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.rend summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sup summary{cursor:pointer;font-family:var(--f-display);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+.sup summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.sup p.help{color:var(--ink-2);font-size:13px;margin-top:10px;max-width:80ch}
+.foot{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--sheet);padding:10px 18px;border-radius:999px;font-weight:500;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px);z-index:20}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <p class="eyebrow">Lámina M-01 · Metrado de estructuras</p>
+      <h1>Metrados de Obra</h1>
+      <p class="lede">Escribe las medidas, estribos o estructura como en el plano. La app dibuja el elemento, cuenta estribos y barras, y te muestra cada cálculo paso a paso.</p>
+    </div>
+    <dl class="rotulo">
+      <div><dt>Proyecto</dt><dd><input id="p-proy" value="Vivienda multifamiliar" aria-label="Nombre del proyecto"></dd></div>
+      <div><dt>Norma</dt><dd>RNE E.060 · Norma de metrados</dd></div>
+      <div><dt>Unidades</dt><dd>m · m² · m³ · kg</dd></div>
+    </dl>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Elementos">
+    <button role="tab" id="t-vigas" data-tab="vigas" aria-selected="true">Vigas</button>
+    <button role="tab" id="t-columnas" data-tab="columnas" aria-selected="false">Columnas</button>
+    <button role="tab" id="t-zapatas" data-tab="zapatas" aria-selected="false">Zapatas</button>
+    <button role="tab" id="t-drywall" data-tab="drywall" aria-selected="false">Drywall</button>
+    <button role="tab" id="t-resumen" data-tab="resumen" aria-selected="false">Resumen <span class="badge" id="badge">0</span></button>
+  </nav>
+
+  <!-- VIGAS -->
+  <section class="work" id="tab-vigas" role="tabpanel" aria-labelledby="t-vigas">
+    <aside class="panel" data-form="viga">
+      <h2>Viga <small>datos de ejemplo</small></h2>
+      <div class="row">
+        <div class="f"><label for="v-name">Nombre / eje</label><input id="v-name" value="VP-101 (eje B)"></div>
+        <div class="f"><label for="v-qty">Vigas iguales</label><input id="v-qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+      </div>
+      <fieldset><legend>Geometría</legend>
+        <div class="f"><label for="v-spans">Luces libres entre caras (m)</label><input id="v-spans" value="4.20, 5.10, 3.80"><span class="help">Separa cada tramo con coma</span></div>
+        <div class="row r3">
+          <div class="f"><label for="v-b">Base <b>b</b></label><input id="v-b" type="number" step="0.05" value="0.25" inputmode="decimal"></div>
+          <div class="f"><label for="v-h">Peralte <b>h</b></label><input id="v-h" type="number" step="0.05" value="0.50" inputmode="decimal"></div>
+          <div class="f"><label for="v-a">Ancho apoyo</label><input id="v-a" type="number" step="0.05" value="0.30" inputmode="decimal"></div>
+        </div>
+        <div class="row r3">
+          <div class="f"><label for="v-e">Losa <b>e</b></label><input id="v-e" type="number" step="0.05" value="0.20" inputmode="decimal"></div>
+          <div class="f"><label for="v-r">Recub. <b>r</b></label><input id="v-r" type="number" step="0.01" value="0.04" inputmode="decimal"></div>
+          <div class="f"><label for="v-fc">f'c</label><select id="v-fc"><option>175</option><option selected>210</option><option>280</option></select></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Acero longitudinal</legend>
+        <div class="row">
+          <div class="f"><label for="v-ntop">Barras arriba</label><input id="v-ntop" type="number" min="0" step="1" value="2" inputmode="numeric"></div>
+          <div class="f"><label for="v-dtop">Ø arriba</label><select id="v-dtop" data-diam="5/8"></select></div>
+        </div>
+        <div class="row">
+          <div class="f"><label for="v-nbot">Barras abajo</label><input id="v-nbot" type="number" min="0" step="1" value="2" inputmode="numeric"></div>
+          <div class="f"><label for="v-dbot">Ø abajo</label><select id="v-dbot" data-diam="5/8"></select></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Estribos</legend>
+        <div class="f"><label for="v-de">Ø estribo</label><select id="v-de" data-diam="3/8"></select></div>
+        <div class="f"><label for="v-dist">Distribución (cada extremo)</label><input id="v-dist" value="1@.05, 8@.10, rto@.25"><span class="help" id="v-dist-help">Igual que en el plano: 1@.05, 8@.10, rto@.25</span></div>
+      </fieldset>
+      <button class="btn" type="button" data-add="viga">Agregar al resumen</button>
+    </aside>
+    <div class="out" id="out-viga"></div>
+  </section>
+
+  <!-- COLUMNAS -->
+  <section class="work" id="tab-columnas" role="tabpanel" aria-labelledby="t-columnas" hidden>
+    <aside class="panel" data-form="columna">
+      <h2>Columna <small>datos de ejemplo</small></h2>
+      <div class="row">
+        <div class="f"><label for="c-name">Nombre / eje</label><input id="c-name" value="C-1 (B-2)"></div>
+        <div class="f"><label for="c-qty">Columnas iguales</label><input id="c-qty" type="number" min="1" step="1" value="4" inputmode="numeric"></div>
+      </div>
+      <fieldset><legend>Geometría</legend>
+        <div class="row r3">
+          <div class="f"><label for="c-b">Lado <b>b</b></label><input id="c-b" type="number" step="0.05" value="0.30" inputmode="decimal"></div>
+          <div class="f"><label for="c-t">Lado <b>t</b></label><input id="c-t" type="number" step="0.05" value="0.50" inputmode="decimal"></div>
+          <div class="f"><label for="c-H">Altura <b>H</b></label><input id="c-H" type="number" step="0.05" value="2.80" inputmode="decimal"></div>
+        </div>
+        <div class="row">
+          <div class="f"><label for="c-r">Recub. <b>r</b></label><input id="c-r" type="number" step="0.01" value="0.04" inputmode="decimal"></div>
+          <div class="f"><label for="c-fc">f'c</label><select id="c-fc"><option>175</option><option selected>210</option><option>280</option></select></div>
+        </div>
+        <span class="help" style="font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2)">H: desde la cara superior de la cimentación o losa hasta el fondo de la viga</span>
+      </fieldset>
+      <fieldset><legend>Acero longitudinal</legend>
+        <div class="row">
+          <div class="f"><label for="c-n">N° de barras</label><input id="c-n" type="number" min="4" step="1" value="6" inputmode="numeric"></div>
+          <div class="f"><label for="c-d">Ø barras</label><select id="c-d" data-diam="5/8"></select></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Estribos</legend>
+        <div class="f"><label for="c-de">Ø estribo</label><select id="c-de" data-diam="3/8"></select></div>
+        <div class="f"><label for="c-dist">Distribución (cada extremo)</label><input id="c-dist" value="1@.05, 6@.10, rto@.25"><span class="help" id="c-dist-help">Igual que en el plano: 1@.05, 6@.10, rto@.25</span></div>
+      </fieldset>
+      <button class="btn" type="button" data-add="columna">Agregar al resumen</button>
+    </aside>
+    <div class="out" id="out-columna"></div>
+  </section>
+
+  <!-- ZAPATAS -->
+  <section class="work" id="tab-zapatas" role="tabpanel" aria-labelledby="t-zapatas" hidden>
+    <aside class="panel" data-form="zapata">
+      <h2>Zapata <small>datos de ejemplo</small></h2>
+      <div class="row">
+        <div class="f"><label for="z-name">Nombre / eje</label><input id="z-name" value="Z-1"></div>
+        <div class="f"><label for="z-qty">Zapatas iguales</label><input id="z-qty" type="number" min="1" step="1" value="4" inputmode="numeric"></div>
+      </div>
+      <fieldset><legend>Geometría</legend>
+        <div class="row r3">
+          <div class="f"><label for="z-A">Largo <b>A</b></label><input id="z-A" type="number" step="0.05" value="1.80" inputmode="decimal"></div>
+          <div class="f"><label for="z-B">Ancho <b>B</b></label><input id="z-B" type="number" step="0.05" value="1.50" inputmode="decimal"></div>
+          <div class="f"><label for="z-h">Peralte <b>h</b></label><input id="z-h" type="number" step="0.05" value="0.60" inputmode="decimal"></div>
+        </div>
+        <div class="row r3">
+          <div class="f"><label for="z-Df">Excavación</label><input id="z-Df" type="number" step="0.05" value="1.50" inputmode="decimal"></div>
+          <div class="f"><label for="z-es">Solado</label><input id="z-es" type="number" step="0.01" value="0.10" inputmode="decimal"></div>
+          <div class="f"><label for="z-r">Recub. <b>r</b></label><input id="z-r" type="number" step="0.005" value="0.075" inputmode="decimal"></div>
+        </div>
+        <div class="f"><label for="z-fc">f'c</label><select id="z-fc"><option>175</option><option selected>210</option><option>280</option></select></div>
+        <label class="check"><input type="checkbox" id="z-enc"> Lleva encofrado lateral</label>
+      </fieldset>
+      <fieldset><legend>Parrilla inferior (ambas direcciones)</legend>
+        <div class="row">
+          <div class="f"><label for="z-d">Ø barras</label><select id="z-d" data-diam="5/8"></select></div>
+          <div class="f"><label for="z-s">Espaciado (m)</label><input id="z-s" type="number" step="0.025" value="0.20" inputmode="decimal"></div>
+        </div>
+      </fieldset>
+      <button class="btn" type="button" data-add="zapata">Agregar al resumen</button>
+    </aside>
+    <div class="out" id="out-zapata"></div>
+  </section>
+
+  <!-- DRYWALL -->
+  <section class="work" id="tab-drywall" role="tabpanel" aria-labelledby="t-drywall" hidden>
+    <aside class="panel" data-form="drywall">
+      <h2>Muro drywall <small>datos de ejemplo</small></h2>
+      <div class="row">
+        <div class="f"><label for="d-name">Nombre / eje</label><input id="d-name" value="T-1 (eje 3)"></div>
+        <div class="f"><label for="d-qty">Muros iguales</label><input id="d-qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+      </div>
+      <div class="f"><label for="d-desc">Descripción de la partida</label><input id="d-desc" value="Muro de ST con estructura de 45 @ 15"><span class="help">Así aparece en el resumen. Si la dejas vacía, se arma con los datos.</span></div>
+      <fieldset><legend>Geometría</legend>
+        <div class="row">
+          <div class="f"><label for="d-L">Largo <b>L</b></label><input id="d-L" type="number" step="0.05" value="4.50" inputmode="decimal"></div>
+          <div class="f"><label for="d-H">Altura <b>H</b></label><input id="d-H" type="number" step="0.05" value="2.70" inputmode="decimal"></div>
+        </div>
+        <div class="f"><label for="d-vanos">Vanos (ancho x alto)</label><input id="d-vanos" value="P 0.90x2.10"><span class="help" id="d-vanos-help">P = puerta, V = ventana. Ej: P 0.90x2.10, 2V 1.20x1.00</span></div>
+      </fieldset>
+      <fieldset><legend>Placas</legend>
+        <div class="row r3">
+          <div class="f"><label for="d-placa">Tipo</label><select id="d-placa"><option value="ST" selected>ST</option><option value="RH">RH</option><option value="RF">RF</option></select></div>
+          <div class="f"><label for="d-esp">Espesor mm</label><select id="d-esp"><option value="9.5">9.5</option><option value="12.7" selected>12.7</option><option value="15.9">15.9</option></select></div>
+          <div class="f"><label for="d-caras">Caras</label><select id="d-caras"><option value="1">1</option><option value="2" selected>2</option></select></div>
+        </div>
+        <div class="row">
+          <div class="f"><label for="d-capas">Capas por cara</label><select id="d-capas"><option value="1" selected>1</option><option value="2">2</option></select></div>
+          <div class="f"><label for="d-ori">Colocación</label><select id="d-ori"><option value="auto" selected>Automática</option><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+        </div>
+        <div class="f"><label for="d-extra">Extra por roturas %</label><input id="d-extra" type="number" min="0" step="1" value="0" inputmode="decimal"><span class="help">El desperdicio por cortes ya sale del despiece</span></div>
+        <label class="check"><input type="checkbox" id="d-lana"> Lleva lana de vidrio</label>
+      </fieldset>
+      <fieldset><legend>Estructura</legend>
+        <div class="f"><label for="d-est">Parante @ espaciado</label><input id="d-est" value="45 @ 15"><span class="help" id="d-est-help">Ancho del parante en mm @ espaciado en cm</span></div>
+        <div class="row">
+          <div class="f"><label for="d-lp">Largo parante (m)</label><input id="d-lp" type="number" step="0.05" value="3.00" inputmode="decimal"></div>
+          <div class="f"><label for="d-lr">Largo riel (m)</label><input id="d-lr" type="number" step="0.05" value="3.00" inputmode="decimal"></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Tornillos y acabado</legend>
+        <div class="row">
+          <div class="f"><label for="d-st">Tornillo cada (m)</label><input id="d-st" type="number" step="0.05" value="0.30" inputmode="decimal"></div>
+          <div class="f"><label for="d-ma">Masilla kg/m²</label><input id="d-ma" type="number" step="0.1" value="0.5" inputmode="decimal"></div>
+        </div>
+        <div class="f"><label for="d-te">Tornillos perfil–perfil por parante</label><input id="d-te" type="number" step="1" value="4" inputmode="decimal"></div>
+      </fieldset>
+      <fieldset><legend>Esquinas y bordes</legend>
+        <div class="row">
+          <div class="f"><label for="d-ei">Esquinas interiores</label><input id="d-ei" type="number" min="0" step="1" value="2" inputmode="numeric"></div>
+          <div class="f"><label for="d-ee">Esquinas exteriores</label><input id="d-ee" type="number" min="0" step="1" value="0" inputmode="numeric"></div>
+        </div>
+        <div class="f"><label for="d-vb">Bordes de vanos</label><select id="d-vb"><option value="esq" selected>Esquinero metálico</option><option value="cinta">Cinta de papel</option></select><span class="help">Esquinas interiores y encuentros con otros muros llevan cinta; las exteriores, esquinero</span></div>
+        <label class="check"><input type="checkbox" id="d-techo"> Encuentro con techo lleva cinta</label>
+      </fieldset>
+      <fieldset><legend>Mostrar en el dibujo</legend>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="d-v-est" checked> Estructura</label>
+          <label class="check"><input type="checkbox" id="d-v-tor" checked> Tornillos</label>
+          <label class="check"><input type="checkbox" id="d-v-cin" checked> Cinta y esquinero</label>
+          <label class="check"><input type="checkbox" id="d-v-mas" checked> Masilla</label>
+        </div>
+      </fieldset>
+      <button class="btn" type="button" data-add="drywall">Agregar al resumen</button>
+    </aside>
+    <div class="out" id="out-drywall"></div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section id="tab-resumen" role="tabpanel" aria-labelledby="t-resumen" hidden>
+    <div class="out" id="out-resumen"></div>
+  </section>
+
+  <details class="card sup" id="sup">
+    <summary>Supuestos de cálculo</summary>
+    <div class="sup-grid">
+      <div class="f"><label for="s-gl">Gancho de barra longitudinal (× db)</label><input id="s-gl" type="number" step="1" value="12" inputmode="decimal"></div>
+      <div class="f"><label for="s-tr">Longitud de traslape (× db)</label><input id="s-tr" type="number" step="1" value="40" inputmode="decimal"></div>
+      <div class="f"><label for="s-lc">Longitud comercial de varilla (m)</label><input id="s-lc" type="number" step="0.5" value="9" inputmode="decimal"></div>
+      <div class="f"><label for="s-ge">Gancho de estribo 135° (× db, mín. 7.5 cm)</label><input id="s-ge" type="number" step="1" value="6" inputmode="decimal"></div>
+    </div>
+    <p class="help">Vigas: concreto y encofrado medidos con luces libres entre caras de columnas; encofrado = fondo + dos caras laterales descontando la losa (viga interior). Columnas: barras con un traslape para empalmar con el piso superior. Zapatas: excavación sin sobreancho. Ajusta estos valores a lo que indique tu plano.</p>
+  </details>
+
+  <footer class="foot">
+    <span>Pesos nominales de varillas según NTP 341.031</span>
+    <span>Tus datos se guardan solo en este navegador</span>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const DIAM={
+  '6mm':{db:.006,w:.222,label:'Ø6 mm'},
+  '8mm':{db:.008,w:.395,label:'Ø8 mm'},
+  '3/8':{db:.00953,w:.560,label:'Ø3/8"'},
+  '12mm':{db:.012,w:.888,label:'Ø12 mm'},
+  '1/2':{db:.0127,w:.994,label:'Ø1/2"'},
+  '5/8':{db:.01588,w:1.552,label:'Ø5/8"'},
+  '3/4':{db:.01905,w:2.235,label:'Ø3/4"'},
+  '1':{db:.0254,w:3.973,label:'Ø1"'}
+};
+const DK=Object.keys(DIAM);
+const $=id=>document.getElementById(id);
+const num=(id,def=0)=>{const v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:def;};
+const int=(id,def=0)=>Math.max(0,Math.round(num(id,def)));
+const f=(x,d=2)=>(Math.round((x+Number.EPSILON)*10**d)/10**d).toFixed(d);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sum=a=>a.reduce((s,x)=>s+x,0);
+const STORE_IN='metrados.inputs.v1', STORE_RES='metrados.resumen.v1';
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+document.querySelectorAll('select[data-diam]').forEach(sel=>{
+  sel.innerHTML=DK.map(k=>`<option value="${k}"${k===sel.dataset.diam?' selected':''}>${DIAM[k].label}</option>`).join('');
+});
+
+function sup(){return{gl:num('s-gl',12),tr:num('s-tr',40),lc:Math.max(1,num('s-lc',9)),ge:num('s-ge',6),gemin:.075};}
+
+/* ---------- Distribución de estribos ---------- */
+function parseDist(str){
+  const out={ends:[],rto:null,err:null,cm:false};
+  const clean=String(str).toLowerCase().replace(/c\/\s*e\b|cada\s+extremo|c\/\s*extremo/g,'');
+  const items=clean.split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!items.length){out.err='Escribe la distribución, por ejemplo 1@.05, 8@.10, rto@.25';return out;}
+  const sp=v=>{let s=parseFloat(v);if(s>=1){s/=100;out.cm=true;}return s;};
+  for(const it of items){
+    let m=it.match(/^(\d+)\s*@\s*(\d*\.?\d+)$/);
+    if(m){const n=+m[1],s=sp(m[2]);if(n>0&&s>0){out.ends.push({n,s});continue;}}
+    m=it.match(/^(rto|resto|r)\s*@\s*(\d*\.?\d+)$/);
+    if(m){const s=sp(m[2]);if(s>0){out.rto=s;continue;}}
+    out.err=`No entiendo «${it}». Usa el formato 8@.10 o rto@.25`;return out;
+  }
+  return out;
+}
+function distText(d){
+  const p=d.ends.map(z=>`${z.n}@${f(z.s).replace(/^0/,'')}`);
+  if(d.rto)p.push(`rto@${f(d.rto).replace(/^0/,'')}`);
+  return p.join(', ');
+}
+function stirrups(L,d){
+  const left=[];let p=0;
+  for(const z of d.ends)for(let i=0;i<z.n;i++){p+=z.s;left.push(p);}
+  const endLen=p,endN=left.length;
+  if(2*endLen>=L-1e-9){
+    const l=left.filter(x=>x<L/2-1e-9);
+    const mid=left.some(x=>Math.abs(x-L/2)<1e-9)?[L/2]:[];
+    const pos=[...l,...mid,...l.map(x=>L-x)].sort((a,b)=>a-b);
+    return{total:pos.length,endN:l.length,mid:mid.length,rem:0,endLen,pos,overlap:true};
+  }
+  const rem=L-2*endLen;
+  const mid=d.rto?Math.max(0,Math.ceil(rem/d.rto-1e-6)-1):0;
+  const pos=[...left];
+  for(let i=1;i<=mid;i++)pos.push(endLen+rem*i/(mid+1));
+  for(let i=left.length-1;i>=0;i--)pos.push(L-left[i]);
+  return{total:2*endN+mid,endN,mid,rem,endLen,pos,overlap:false};
+}
+function lap(Lb,db,S){const n=Lb>S.lc+1e-9?Math.ceil(Lb/S.lc)-1:0;return{n,L:Lb+n*S.tr*db,add:S.tr*db};}
+function hatchDefs(id){return `<defs><pattern id="${id}" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatchbg" width="7" height="7"/><line class="hatchln" x1="0" y1="0" x2="0" y2="7"/></pattern></defs>`;}
+const B=(x)=>`<b>${x}</b>`, R=(x)=>`<span class="r">${x}</span>`;
+
+/* ---------- VIGA ---------- */
+function calcViga(){
+  const S=sup();
+  const c={tipo:'viga',nombre:$('v-name').value.trim()||'Viga',qty:Math.max(1,int('v-qty',1)),fc:$('v-fc').value,
+    b:num('v-b'),h:num('v-h'),a:num('v-a'),e:num('v-e'),r:num('v-r'),
+    spans:$('v-spans').value.split(/[,;\s]+/).map(s=>parseFloat(s)).filter(x=>x>0),
+    nTop:int('v-ntop'),dTop:$('v-dtop').value,nBot:int('v-nbot'),dBot:$('v-dbot').value,dE:$('v-de').value,
+    dist:parseDist($('v-dist').value)};
+  if(!c.spans.length)return{err:'Escribe al menos una luz libre, por ejemplo 4.20, 5.10'};
+  if(!(c.b>0&&c.h>0))return{err:'La base b y el peralte h deben ser mayores que cero.'};
+  if(2*c.r>=Math.min(c.b,c.h))return{err:'El recubrimiento es demasiado grande para la sección.'};
+  if(c.dist.err)return{err:c.dist.err,distErr:true};
+  const q=c.qty,n=c.spans.length,sumL=sum(c.spans);
+  const vol=c.b*c.h*sumL*q;
+  const hl=Math.max(0,c.h-c.e);
+  const enc=(c.b+2*hl)*sumL*q;
+  const cnt=c.spans.map(L=>stirrups(L,c.dist));
+  const nE1=sum(cnt.map(k=>k.total)),nE=nE1*q;
+  const dE=DIAM[c.dE],gE=Math.max(S.ge*dE.db,S.gemin);
+  const LE=2*(c.b-2*c.r)+2*(c.h-2*c.r)+2*gE;
+  const kgE=nE*LE*dE.w;
+  const Lr=sumL+(n-1)*c.a+2*Math.max(0,c.a-c.r);
+  const bars=[['superior',c.nTop,c.dTop],['inferior',c.nBot,c.dBot]].filter(x=>x[1]>0).map(([pos,nb,dk])=>{
+    const d=DIAM[dk],Lb=Lr+2*S.gl*d.db,lp=lap(Lb,d.db,S);
+    return{pos,nb,dk,d,Lb,lp,kg:nb*q*lp.L*d.w};
+  });
+  const steel=[...bars.map(x=>({e:`Acero ${x.pos}`,dk:x.dk,n:x.nb*q,L:x.lp.L,kg:x.kg})),{e:'Estribos',dk:c.dE,n:nE,L:LE,kg:kgE}];
+  const kg=sum(steel.map(s=>s.kg));
+  const end=c.dist.ends.length?`${distText({ends:c.dist.ends})} → ${B(cnt[0].endN||sum(c.dist.ends.map(z=>z.n)))} estribos en ${B(f(sum(c.dist.ends.map(z=>z.n*z.s))))} m`:'sin zona de confinamiento';
+  const mem=[
+    {t:'Longitud de viga (luces libres entre caras)',f:`ΣL = ${c.spans.map(x=>f(x)).join(' + ')} = ${R(f(sumL)+' m')}`},
+    {t:'Concreto',f:`V = b × h × ΣL × cant = ${f(c.b)} × ${f(c.h)} × ${f(sumL)} × ${q} = ${R(f(vol,3)+' m³')}`},
+    {t:'Encofrado (fondo + 2 caras, descontando losa)',f:`A = (b + 2·(h − e)) × ΣL × cant = (${f(c.b)} + 2×(${f(c.h)} − ${f(c.e)})) × ${f(sumL)} × ${q} = ${R(f(enc)+' m²')}`},
+    {t:'Estribos en cada extremo',f:end}
+  ];
+  cnt.forEach((k,i)=>{
+    const L=c.spans[i];
+    mem.push({t:`Tramo L${i+1} = ${f(L)} m`,f:k.overlap
+      ?`Las zonas de los extremos se cruzan (2 × ${f(k.endLen)} ≥ ${f(L)}) → se colocan solo hasta el centro = ${R(k.total+' estribos')}`
+      :`resto = ${f(L)} − 2×${f(k.endLen)} = ${B(f(k.rem))} m → ${c.dist.rto?`⌈${f(k.rem)} ÷ ${f(c.dist.rto)}⌉ − 1 = ${B(k.mid)}`:'sin «rto» = 0'} → 2×${k.endN} + ${k.mid} = ${R(k.total+' estribos')}`});
+  });
+  mem.push(
+    {t:'Total de estribos',f:`${cnt.map(k=>k.total).join(' + ')} = ${B(nE1)} por viga × ${q} = ${R(nE+' und')}`},
+    {t:`Longitud de un estribo (${dE.label})`,f:`2(b − 2r) + 2(h − 2r) + 2·gancho = 2(${f(c.b-2*c.r)}) + 2(${f(c.h-2*c.r)}) + 2(${f(gE,3)}) = ${R(f(LE)+' m')}<br>gancho = máx(${S.ge}·db ; 0.075) = ${f(gE,3)} m`},
+    {t:'Peso de estribos',f:`${nE} × ${f(LE)} m × ${f(dE.w,3)} kg/m = ${R(f(kgE)+' kg')}`},
+    {t:'Longitud recta de barra longitudinal',f:`ΣL + apoyos interiores + anclaje en extremos = ${f(sumL)} + ${n-1}×${f(c.a)} + 2×(${f(c.a)} − ${f(c.r)}) = ${R(f(Lr)+' m')}`}
+  );
+  bars.forEach(x=>{
+    mem.push({t:`Acero ${x.pos}: ${x.nb} ${x.d.label}`,f:`L = ${f(Lr)} + 2 ganchos × ${S.gl}·db = ${f(x.Lb)} m`
+      +(x.lp.n?` · supera ${f(S.lc,1)} m → ${x.lp.n} empalme(s) × ${f(x.lp.add)} m = ${B(f(x.lp.L)+' m')}`:'')
+      +`<br>${x.nb} × ${q} × ${f(x.lp.L)} m × ${f(x.d.w,3)} kg/m = ${R(f(x.kg)+' kg')}`});
+  });
+  mem.push({t:'Acero total',f:`${steel.map(s=>f(s.kg)).join(' + ')} = ${R(f(kg)+' kg')} · cuantía ${f(kg/vol,0)} kg/m³`});
+  return{c,S,tipo:'viga',nombre:c.nombre,qty:q,fc:c.fc,vol,enc,kg,steel,mem,cnt,nE1,nE,
+    tiles:[{v:f(vol),u:'m³',l:'Concreto',dark:true},{v:f(enc),u:'m²',l:'Encofrado'},{v:f(kg,1),u:'kg',l:'Acero'},{v:f(kg/vol,0),u:'kg/m³',l:'Cuantía'}],
+    partidas:{concreto:vol,encofrado:enc,acero:kg}};
+}
+function svgVigaElev(r){
+  const c=r.c,W=1000,H=250,m=22,n=c.spans.length,sumL=sum(c.spans);
+  const aw=Math.max(c.a*(W-2*m)/(sumL+(n+1)*c.a),10);
+  const sx=(W-2*m-(n+1)*aw)/sumL;
+  const cols=[],sp=[];let x=m;
+  for(let i=0;i<=n;i++){cols.push(x);x+=aw;if(i<n){sp.push(x);x+=c.spans[i]*sx;}}
+  const yT=78,yB=150,end=cols[n]+aw;
+  let s=hatchDefs('hv')+`<rect class="conc" x="${cols[0]}" y="${yT}" width="${end-cols[0]}" height="${yB-yT}"/>`;
+  if(c.e>0){const ye=yT+Math.min(.8,c.e/c.h)*(yB-yT);s+=`<line class="soil" x1="${cols[0]}" y1="${ye}" x2="${end}" y2="${ye}"/>`;}
+  cols.forEach(cx=>{s+=`<rect x="${cx}" y="44" width="${aw}" height="140" fill="url(#hv)" class="edge"/>`;});
+  r.cnt.forEach((k,i)=>{
+    const x0=sp[i];
+    k.pos.forEach(p=>{const xx=x0+p*sx;s+=`<line class="est" x1="${xx}" y1="${yT+5}" x2="${xx}" y2="${yB-5}"/>`;});
+    const zw=k.endLen*sx;
+    if(!k.overlap&&zw>=16){
+      [[x0,x0+zw],[x0+c.spans[i]*sx-zw,x0+c.spans[i]*sx]].forEach(([a,b])=>{
+        s+=`<path class="zone" d="M${a} 66 V60 H${b} V66"/><text class="ta" x="${(a+b)/2}" y="55" text-anchor="middle" font-size="11">${f(k.endLen)}</text>`;});
+    }
+    const xa=x0,xb=x0+c.spans[i]*sx,xm=(xa+xb)/2;
+    s+=`<path class="dim" d="M${xa} 196 H${xb} M${xa} 190 V202 M${xb} 190 V202"/>`;
+    s+=`<text class="tk" x="${xm}" y="214" text-anchor="middle">L${i+1} = ${f(c.spans[i])}</text>`;
+    s+=`<text class="ta" x="${xm}" y="232" text-anchor="middle">${k.total} estribos</text>`;
+  });
+  const bx0=cols[0]+4,bx1=end-4;
+  if(c.nTop)s+=`<path class="bar" d="M${bx0} ${yT+26} V${yT+9} H${bx1} V${yT+26}"/>`;
+  if(c.nBot)s+=`<path class="bar" d="M${bx0} ${yB-26} V${yB-9} H${bx1} V${yB-26}"/>`;
+  s+=`<text class="t" x="${m}" y="22">Elevación sin escala vertical · cada línea azul es un estribo</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevación de la viga con estribos">${s}</svg>`;
+}
+function barRow(n,x0,x1,y,R){if(n<=0)return'';if(n===1)return `<circle class="dot" cx="${(x0+x1)/2}" cy="${y}" r="${R}"/>`;let s='';for(let i=0;i<n;i++){s+=`<circle class="dot" cx="${x0+(x1-x0)*i/(n-1)}" cy="${y}" r="${R}"/>`;}return s;}
+function svgSecViga(r){
+  const c=r.c,W=300,H=320,sc=Math.min(150/c.b,210/c.h),bw=c.b*sc,hh=c.h*sc,x0=(W-bw)/2,y0=46;
+  let s='';
+  if(c.e>0){const eh=Math.min(c.e,c.h)*sc;s+=`<rect class="conc" x="${x0-58}" y="${y0}" width="58" height="${eh}"/><rect class="conc" x="${x0+bw}" y="${y0}" width="58" height="${eh}"/><text class="t" x="${x0-56}" y="${y0-6}">losa</text>`;}
+  s+=`<rect class="conc" x="${x0}" y="${y0}" width="${bw}" height="${hh}"/>`;
+  const rs=c.r*sc,xi=x0+rs,yi=y0+rs,wi=bw-2*rs,hi=hh-2*rs;
+  s+=`<rect class="estr" x="${xi}" y="${yi}" width="${wi}" height="${hi}" rx="4"/><path class="estr" d="M${xi+4} ${yi+2} l12 12 M${xi+2} ${yi+4} l12 12"/>`;
+  const Rt=Math.max(4,DIAM[c.dTop].db*sc/2),Rb=Math.max(4,DIAM[c.dBot].db*sc/2);
+  s+=barRow(c.nTop,xi+Rt+3,xi+wi-Rt-3,yi+Rt+3,Rt)+barRow(c.nBot,xi+Rb+3,xi+wi-Rb-3,yi+hi-Rb-3,Rb);
+  s+=`<path class="dim" d="M${x0} ${y0+hh+16} H${x0+bw} M${x0} ${y0+hh+10} V${y0+hh+22} M${x0+bw} ${y0+hh+10} V${y0+hh+22}"/><text class="tk" x="${x0+bw/2}" y="${y0+hh+36}" text-anchor="middle">b = ${f(c.b)}</text>`;
+  s+=`<path class="dim" d="M${x0+bw+70} ${y0} V${y0+hh} M${x0+bw+64} ${y0} H${x0+bw+76} M${x0+bw+64} ${y0+hh} H${x0+bw+76}"/><text class="tk" x="${x0+bw+66}" y="${y0+hh/2}" text-anchor="end" transform="rotate(-90 ${x0+bw+66} ${y0+hh/2})">h = ${f(c.h)}</text>`;
+  s+=`<text class="t" x="${W/2}" y="20" text-anchor="middle">Sección ${f(c.b)} × ${f(c.h)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sección de la viga">${s}</svg>`;
+}
+
+/* ---------- COLUMNA ---------- */
+function calcColumna(){
+  const S=sup();
+  const c={tipo:'columna',nombre:$('c-name').value.trim()||'Columna',qty:Math.max(1,int('c-qty',1)),fc:$('c-fc').value,
+    b:num('c-b'),t:num('c-t'),H:num('c-H'),r:num('c-r'),n:Math.max(4,int('c-n',4)),dk:$('c-d').value,dE:$('c-de').value,dist:parseDist($('c-dist').value)};
+  if(!(c.b>0&&c.t>0&&c.H>0))return{err:'Los lados b, t y la altura H deben ser mayores que cero.'};
+  if(2*c.r>=Math.min(c.b,c.t))return{err:'El recubrimiento es demasiado grande para la sección.'};
+  if(c.dist.err)return{err:c.dist.err,distErr:true};
+  const q=c.qty,vol=c.b*c.t*c.H*q,enc=2*(c.b+c.t)*c.H*q;
+  const k=stirrups(c.H,c.dist),nE=k.total*q;
+  const dE=DIAM[c.dE],gE=Math.max(S.ge*dE.db,S.gemin),LE=2*(c.b-2*c.r)+2*(c.t-2*c.r)+2*gE,kgE=nE*LE*dE.w;
+  const d=DIAM[c.dk],Lb=c.H+S.tr*d.db,kgL=c.n*q*Lb*d.w;
+  const steel=[{e:'Acero longitudinal',dk:c.dk,n:c.n*q,L:Lb,kg:kgL},{e:'Estribos',dk:c.dE,n:nE,L:LE,kg:kgE}];
+  const kg=kgL+kgE;
+  const mem=[
+    {t:'Concreto',f:`V = b × t × H × cant = ${f(c.b)} × ${f(c.t)} × ${f(c.H)} × ${q} = ${R(f(vol,3)+' m³')}`},
+    {t:'Encofrado (4 caras)',f:`A = 2·(b + t) × H × cant = 2×(${f(c.b)} + ${f(c.t)}) × ${f(c.H)} × ${q} = ${R(f(enc)+' m²')}`},
+    {t:'Estribos en cada extremo',f:c.dist.ends.length?`${distText({ends:c.dist.ends})} → ${B(k.endN)} estribos en ${B(f(k.endLen))} m`:'sin zona de confinamiento'},
+    {t:`Estribos en H = ${f(c.H)} m`,f:k.overlap?`Las zonas se cruzan → ${R(k.total+' estribos')}`:`resto = ${f(c.H)} − 2×${f(k.endLen)} = ${B(f(k.rem))} m → ${c.dist.rto?`⌈${f(k.rem)} ÷ ${f(c.dist.rto)}⌉ − 1 = ${B(k.mid)}`:'0'} → 2×${k.endN} + ${k.mid} = ${R(k.total+' por columna')}`},
+    {t:`Longitud de un estribo (${dE.label})`,f:`2(b − 2r) + 2(t − 2r) + 2·gancho = 2(${f(c.b-2*c.r)}) + 2(${f(c.t-2*c.r)}) + 2(${f(gE,3)}) = ${R(f(LE)+' m')}`},
+    {t:'Peso de estribos',f:`${k.total} × ${q} × ${f(LE)} m × ${f(dE.w,3)} kg/m = ${R(f(kgE)+' kg')}`},
+    {t:`Barras longitudinales: ${c.n} ${d.label}`,f:`L = H + traslape (${S.tr}·db) = ${f(c.H)} + ${f(S.tr*d.db)} = ${B(f(Lb)+' m')}<br>${c.n} × ${q} × ${f(Lb)} m × ${f(d.w,3)} kg/m = ${R(f(kgL)+' kg')}`},
+    {t:'Acero total',f:`${f(kgL)} + ${f(kgE)} = ${R(f(kg)+' kg')} · cuantía ${f(kg/vol,0)} kg/m³`}
+  ];
+  return{c,S,tipo:'columna',nombre:c.nombre,qty:q,fc:c.fc,vol,enc,kg,steel,mem,k,
+    tiles:[{v:f(vol),u:'m³',l:'Concreto',dark:true},{v:f(enc),u:'m²',l:'Encofrado'},{v:f(kg,1),u:'kg',l:'Acero'},{v:f(kg/vol,0),u:'kg/m³',l:'Cuantía'}],
+    partidas:{concreto:vol,encofrado:enc,acero:kg}};
+}
+function svgColElev(r){
+  const c=r.c,k=r.k,S=r.S,W=320,H=440,cx0=120,cw=64,yTop=64,yBot=372,sy=(yBot-yTop)/c.H;
+  let s=hatchDefs('hc');
+  s+=`<rect x="60" y="24" width="184" height="${yTop-24}" fill="url(#hc)" class="edge"/><text class="t" x="66" y="${yTop-8}">viga</text>`;
+  s+=`<rect x="40" y="${yBot}" width="224" height="40" fill="url(#hc)" class="edge"/><text class="t" x="182" y="${yBot+26}">cimentación</text>`;
+  s+=`<rect class="conc" x="${cx0}" y="${yTop}" width="${cw}" height="${yBot-yTop}"/>`;
+  k.pos.forEach(p=>{const y=yBot-p*sy;s+=`<line class="est" x1="${cx0+5}" y1="${y}" x2="${cx0+cw-5}" y2="${y}"/>`;});
+  const lapPx=Math.min(yTop-6,S.tr*DIAM[c.dk].db*sy);
+  [cx0+10,cx0+cw-10].forEach(x=>{s+=`<line class="bar" x1="${x}" y1="${yTop-lapPx}" x2="${x}" y2="${yBot+28}"/>`;});
+  s+=`<text class="ta" x="${cx0+cw+8}" y="${yTop-lapPx+10}" font-size="11">traslape ${f(S.tr*DIAM[c.dk].db)}</text>`;
+  if(!k.overlap&&k.endLen*sy>=14){
+    [[yBot-k.endLen*sy,yBot],[yTop,yTop+k.endLen*sy]].forEach(([a,b])=>{
+      s+=`<path class="zone" d="M${cx0-6} ${a} H${cx0-12} V${b} H${cx0-6}"/><text class="ta" x="${cx0-16}" y="${(a+b)/2+4}" text-anchor="end">${k.endN} en ${f(k.endLen)}</text>`;});
+    s+=`<text class="ta" x="${cx0-16}" y="${(yTop+yBot)/2+4}" text-anchor="end">${k.mid} @ ${c.dist.rto?f(c.dist.rto):'—'}</text>`;
+  }
+  const xd=cx0+cw+44;
+  s+=`<path class="dim" d="M${xd} ${yTop} V${yBot} M${xd-6} ${yTop} H${xd+6} M${xd-6} ${yBot} H${xd+6}"/><text class="tk" x="${xd+6}" y="${(yTop+yBot)/2}" transform="rotate(-90 ${xd+6} ${(yTop+yBot)/2})" text-anchor="middle" dy="-6">H = ${f(c.H)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevación de la columna">${s}</svg>`;
+}
+function svgColSec(r){
+  const c=r.c,W=300,H=320,sc=Math.min(190/c.b,210/c.t),bw=c.b*sc,hh=c.t*sc,x0=(W-bw)/2,y0=44;
+  let s=`<rect class="conc" x="${x0}" y="${y0}" width="${bw}" height="${hh}"/>`;
+  const rs=c.r*sc,xi=x0+rs,yi=y0+rs,wi=bw-2*rs,hi=hh-2*rs;
+  s+=`<rect class="estr" x="${xi}" y="${yi}" width="${wi}" height="${hi}" rx="4"/><path class="estr" d="M${xi+4} ${yi+2} l12 12 M${xi+2} ${yi+4} l12 12"/>`;
+  const Rr=Math.max(4,DIAM[c.dk].db*sc/2),g=Rr+3,L=xi+g,Rt=xi+wi-g,T=yi+g,Bt=yi+hi-g;
+  const extra=c.n-4,pairs=Math.floor(extra/2);
+  const kV=Math.round(pairs*c.t/(c.b+c.t)),kH=pairs-kV,odd=extra%2;
+  const pts=[[L,T],[Rt,T],[L,Bt],[Rt,Bt]];
+  const along=(x0,y0,x1,y1,k)=>{for(let i=1;i<=k;i++)pts.push([x0+(x1-x0)*i/(k+1),y0+(y1-y0)*i/(k+1)]);};
+  along(L,T,L,Bt,kV+odd);along(Rt,T,Rt,Bt,kV);along(L,T,Rt,T,kH);along(L,Bt,Rt,Bt,kH);
+  pts.forEach(([x,y])=>{s+=`<circle class="dot" cx="${x}" cy="${y}" r="${Rr}"/>`;});
+  s+=`<path class="dim" d="M${x0} ${y0+hh+16} H${x0+bw} M${x0} ${y0+hh+10} V${y0+hh+22} M${x0+bw} ${y0+hh+10} V${y0+hh+22}"/><text class="tk" x="${x0+bw/2}" y="${y0+hh+36}" text-anchor="middle">b = ${f(c.b)}</text>`;
+  s+=`<path class="dim" d="M${x0+bw+18} ${y0} V${y0+hh} M${x0+bw+12} ${y0} H${x0+bw+24} M${x0+bw+12} ${y0+hh} H${x0+bw+24}"/><text class="tk" x="${x0+bw+14}" y="${y0+hh/2}" text-anchor="middle" transform="rotate(-90 ${x0+bw+14} ${y0+hh/2})" dy="-4">t = ${f(c.t)}</text>`;
+  s+=`<text class="t" x="${W/2}" y="20" text-anchor="middle">Sección · ${c.n} ${DIAM[c.dk].label}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sección de la columna">${s}</svg>`;
+}
+
+/* ---------- ZAPATA ---------- */
+function calcZapata(){
+  const S=sup();
+  const c={tipo:'zapata',nombre:$('z-name').value.trim()||'Zapata',qty:Math.max(1,int('z-qty',1)),fc:$('z-fc').value,
+    A:num('z-A'),B:num('z-B'),h:num('z-h'),Df:num('z-Df'),es:num('z-es'),r:num('z-r'),dk:$('z-d').value,s:num('z-s'),encof:$('z-enc').checked};
+  if(!(c.A>0&&c.B>0&&c.h>0))return{err:'Los lados A, B y el peralte h deben ser mayores que cero.'};
+  if(!(c.s>0))return{err:'El espaciado de la parrilla debe ser mayor que cero.'};
+  if(2*c.r>=Math.min(c.A,c.B))return{err:'El recubrimiento es demasiado grande para la zapata.'};
+  const q=c.qty,d=DIAM[c.dk];
+  const exc=c.A*c.B*c.Df*q,sol=c.A*c.B*q,vol=c.A*c.B*c.h*q,enc=c.encof?2*(c.A+c.B)*c.h*q:0;
+  const gz=S.gl*d.db;
+  const nA=Math.floor((c.B-2*c.r)/c.s+1e-6)+1,LA=c.A-2*c.r+2*gz;
+  const nB=Math.floor((c.A-2*c.r)/c.s+1e-6)+1,LB=c.B-2*c.r+2*gz;
+  const kgA=nA*q*LA*d.w,kgB=nB*q*LB*d.w,kg=kgA+kgB;
+  const steel=[{e:'Parrilla, barras en A',dk:c.dk,n:nA*q,L:LA,kg:kgA},{e:'Parrilla, barras en B',dk:c.dk,n:nB*q,L:LB,kg:kgB}];
+  const mem=[
+    {t:'Excavación',f:`A × B × prof. × cant = ${f(c.A)} × ${f(c.B)} × ${f(c.Df)} × ${q} = ${R(f(exc,3)+' m³')}`},
+    {t:`Solado e = ${f(c.es)} m`,f:`A × B × cant = ${f(c.A)} × ${f(c.B)} × ${q} = ${R(f(sol)+' m²')}`},
+    {t:'Concreto',f:`V = A × B × h × cant = ${f(c.A)} × ${f(c.B)} × ${f(c.h)} × ${q} = ${R(f(vol,3)+' m³')}`},
+    {t:'Encofrado lateral',f:c.encof?`2·(A + B) × h × cant = 2×(${f(c.A)} + ${f(c.B)}) × ${f(c.h)} × ${q} = ${R(f(enc)+' m²')}`:`Vaciado contra terreno = ${R('0.00 m²')}`},
+    {t:'Barras paralelas a A (repartidas en B)',f:`n = ⌊(B − 2r) ÷ s⌋ + 1 = ⌊${f(c.B-2*c.r,3)} ÷ ${f(c.s,3)}⌋ + 1 = ${B(nA)}<br>L = A − 2r + 2 ganchos (${S.gl}·db) = ${f(c.A)} − ${f(2*c.r,3)} + ${f(2*gz,3)} = ${B(f(LA)+' m')}<br>${nA} × ${q} × ${f(LA)} × ${f(d.w,3)} kg/m = ${R(f(kgA)+' kg')}`},
+    {t:'Barras paralelas a B (repartidas en A)',f:`n = ⌊(A − 2r) ÷ s⌋ + 1 = ⌊${f(c.A-2*c.r,3)} ÷ ${f(c.s,3)}⌋ + 1 = ${B(nB)}<br>L = B − 2r + 2 ganchos = ${f(c.B)} − ${f(2*c.r,3)} + ${f(2*gz,3)} = ${B(f(LB)+' m')}<br>${nB} × ${q} × ${f(LB)} × ${f(d.w,3)} kg/m = ${R(f(kgB)+' kg')}`},
+    {t:'Acero total',f:`${f(kgA)} + ${f(kgB)} = ${R(f(kg)+' kg')} · cuantía ${f(kg/vol,0)} kg/m³`}
+  ];
+  return{c,S,tipo:'zapata',nombre:c.nombre,qty:q,fc:c.fc,vol,enc,kg,steel,mem,nA,nB,
+    tiles:[{v:f(vol),u:'m³',l:'Concreto',dark:true},{v:f(exc),u:'m³',l:'Excavación'},{v:f(sol),u:'m²',l:'Solado'},{v:f(kg,1),u:'kg',l:'Acero'}],
+    partidas:{excavacion:exc,solado:sol,concreto:vol,encofrado:enc,acero:kg}};
+}
+function svgZapPlan(r){
+  const c=r.c,W=340,H=320,sc=Math.min(240/c.A,220/c.B),aw=c.A*sc,bh=c.B*sc,x0=(W-aw)/2-10,y0=40;
+  let s=`<rect class="conc" x="${x0}" y="${y0}" width="${aw}" height="${bh}"/>`;
+  const rs=c.r*sc;
+  for(let i=0;i<r.nA;i++){const y=y0+rs+(r.nA>1?(bh-2*rs)*i/(r.nA-1):(bh-2*rs)/2);s+=`<line class="bar" style="stroke-width:1.6" x1="${x0+rs}" y1="${y}" x2="${x0+aw-rs}" y2="${y}"/>`;}
+  for(let i=0;i<r.nB;i++){const x=x0+rs+(r.nB>1?(aw-2*rs)*i/(r.nB-1):(aw-2*rs)/2);s+=`<line class="est" style="stroke-width:1.6" x1="${x}" y1="${y0+rs}" x2="${x}" y2="${y0+bh-rs}"/>`;}
+  s+=`<path class="dim" d="M${x0} ${y0+bh+16} H${x0+aw} M${x0} ${y0+bh+10} V${y0+bh+22} M${x0+aw} ${y0+bh+10} V${y0+bh+22}"/><text class="tk" x="${x0+aw/2}" y="${y0+bh+36}" text-anchor="middle">A = ${f(c.A)} · ${r.nB} barras</text>`;
+  s+=`<path class="dim" d="M${x0+aw+16} ${y0} V${y0+bh} M${x0+aw+10} ${y0} H${x0+aw+22} M${x0+aw+10} ${y0+bh} H${x0+aw+22}"/><text class="tk" x="${x0+aw+12}" y="${y0+bh/2}" text-anchor="middle" transform="rotate(-90 ${x0+aw+12} ${y0+bh/2})" dy="-4">B = ${f(c.B)} · ${r.nA} barras</text>`;
+  s+=`<text class="t" x="${W/2}" y="20" text-anchor="middle">Planta · ${DIAM[c.dk].label} @ ${f(c.s)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Planta de la zapata con parrilla">${s}</svg>`;
+}
+function svgZapSec(r){
+  const c=r.c,S=r.S,W=340,H=320,depth=Math.max(c.Df,c.h+c.es),k=Math.min(220/c.A,210/depth),aw=c.A*k,x0=(W-aw)/2,yg=50;
+  let s=hatchDefs('hz');
+  s+=`<line class="edge" x1="10" y1="${yg}" x2="${W-10}" y2="${yg}"/><text class="t" x="12" y="${yg-8}">terreno</text>`;
+  const yb=yg+c.Df*k;
+  s+=`<path class="soil" d="M${x0} ${yg} V${yb} H${x0+aw} V${yg}"/>`;
+  const ys=yb-c.es*k,yz=ys-c.h*k;
+  if(c.es>0)s+=`<rect x="${x0}" y="${ys}" width="${aw}" height="${c.es*k}" fill="url(#hz)" class="edge"/>`;
+  s+=`<rect class="conc" x="${x0}" y="${yz}" width="${aw}" height="${c.h*k}"/>`;
+  const rs=c.r*k,yr=ys-rs,hook=Math.min(c.h*k-2*rs,S.gl*DIAM[c.dk].db*k);
+  s+=barRow(r.nB,x0+rs,x0+aw-rs,yr-5,3.2).replace(/class="dot"/g,'class="dot" style="fill:var(--accent)"');
+  s+=`<path class="bar" d="M${x0+rs} ${yr-hook} V${yr} H${x0+aw-rs} V${yr-hook}"/>`;
+  const xd=x0-14;
+  s+=`<path class="dim" d="M${xd} ${yz} V${ys} M${xd-6} ${yz} H${xd+6} M${xd-6} ${ys} H${xd+6}"/><text class="tk" x="${xd-6}" y="${(yz+ys)/2+4}" text-anchor="end">h = ${f(c.h)}</text>`;
+  s+=`<text class="t" x="${x0+8}" y="${yg+18}">prof. ${f(c.Df)}</text>`;
+  if(c.es>0)s+=`<text class="t" x="${x0+aw/2}" y="${yb+16}" text-anchor="middle">solado ${f(c.es)}</text>`;
+  s+=`<text class="t" x="${W/2}" y="20" text-anchor="middle">Corte · excavación y parrilla</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Corte de la zapata">${s}</svg>`;
+}
+
+/* ---------- DRYWALL ---------- */
+const PLACA={w:1.22,h:2.44};
+function parseVanos(str){
+  const out={list:[],err:null};
+  const items=String(str).split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
+  for(const it of items){
+    const m=it.toLowerCase().match(/^(\d+)?\s*(puerta|ventana|p|v)?\s*(\d*\.?\d+)\s*[x×*]\s*(\d*\.?\d+)$/);
+    if(!m){out.err=`No entiendo el vano «${it}». Usa el formato P 0.90x2.10 o 2V 1.20x1.00`;return out;}
+    const n=m[1]?+m[1]:1,a=parseFloat(m[3]),h=parseFloat(m[4]);
+    if(!(n>0&&a>0&&h>0)){out.err=`El vano «${it}» tiene medidas en cero.`;return out;}
+    out.list.push({n,tipo:m[2]&&m[2][0]==='p'?'P':'V',a,h});
+  }
+  return out;
+}
+function parseEst(str){
+  const m=String(str).toLowerCase().match(/(\d*\.?\d+)\s*(?:mm)?\s*@\s*(\d*\.?\d+)/);
+  if(!m)return null;
+  const w=parseFloat(m[1]);let s=parseFloat(m[2]);
+  if(s>=1)s/=100;
+  return w>0&&s>0?{w,s}:null;
+}
+const segLen=segs=>sum(segs.map(s=>s[1]-s[0]));
+function calcDrywall(){
+  const c={tipo:'drywall',nombre:$('d-name').value.trim()||'Muro',qty:Math.max(1,int('d-qty',1)),descIn:$('d-desc').value.trim(),
+    L:num('d-L'),H:num('d-H'),van:parseVanos($('d-vanos').value),placa:$('d-placa').value,esp:$('d-esp').value,
+    caras:+$('d-caras').value,capas:+$('d-capas').value,ori:$('d-ori').value,extra:Math.max(0,num('d-extra',0))/100,lana:$('d-lana').checked,
+    est:parseEst($('d-est').value),Lp:num('d-lp',3),Lr:num('d-lr',3),st:num('d-st',.30),te:num('d-te',4),ma:num('d-ma',.5),
+    ei:int('d-ei',0),ee:int('d-ee',0),vb:$('d-vb').value,techo:$('d-techo').checked,
+    show:{est:$('d-v-est').checked,tor:$('d-v-tor').checked,cin:$('d-v-cin').checked,mas:$('d-v-mas').checked}};
+  if(!(c.L>0&&c.H>0))return{err:'El largo L y la altura H deben ser mayores que cero.'};
+  if(c.van.err)return{err:c.van.err,vanErr:true};
+  if(!c.est)return{err:'Escribe la estructura como en el plano, por ejemplo 45 @ 15 (parante en mm @ espaciado en cm).',estErr:true};
+  if(!(c.Lp>0&&c.Lr>0))return{err:'El largo del parante y del riel debe ser mayor que cero.'};
+  if(!(c.st>=.05))return{err:'La separación de tornillos debe ser de al menos 0.05 m.'};
+  const vans=[];c.van.list.forEach(v=>{for(let i=0;i<v.n;i++)vans.push(v);});
+  if(sum(vans.map(v=>v.a))>=c.L)return{err:'Los vanos suman más que el largo del muro.',vanErr:true};
+  if(vans.some(v=>v.h>=c.H))return{err:'Hay un vano más alto que el muro.',vanErr:true};
+  const q=c.qty,s=c.est.s,w=c.est.w,pl=PLACA.w*PLACA.h;
+  /* ubicación referencial de vanos: repartidos con espacios iguales */
+  const gap=(c.L-sum(vans.map(v=>v.a)))/(vans.length+1);let cur=gap;
+  const vs=vans.map(v=>{const top=v.tipo==='P'?v.h:Math.max(v.h,Math.min(c.H-.05,2.10));const bot=top-v.h;const x1=cur;cur+=v.a+gap;return{...v,x1,x2:x1+v.a,bot,top};});
+  const vSegs=x=>{const v=vs.find(v=>x>v.x1+1e-6&&x<v.x2-1e-6);if(!v)return[[0,c.H]];return[[0,v.bot],[v.top,c.H]].filter(g=>g[1]-g[0]>1e-6);};
+  const hSegs=y=>{const cuts=vs.filter(v=>v.bot<y-1e-6&&v.top>y+1e-6).sort((m,n)=>m.x1-n.x1);const out=[];let a=0;
+    cuts.forEach(v=>{if(v.x1-a>1e-6)out.push([a,v.x1]);a=v.x2;});if(c.L-a>1e-6)out.push([a,c.L]);return out;};
+  const Ab=c.L*c.H,Av=sum(vans.map(v=>v.a*v.h)),An=Ab-Av,area=An*q;
+  /* despiece de placas de una cara: columnas a lo largo de L, filas a lo alto de H */
+  function layout(o){
+    const a=o==='v'?PLACA.w:PLACA.h,b=o==='v'?PLACA.h:PLACA.w;
+    const nc=Math.ceil(c.L/a-1e-6),wl=c.L-(nc-1)*a;
+    const nf=Math.floor(c.H/b+1e-6);let rh=c.H-nf*b;if(rh<1e-6)rh=0;
+    const k=rh>0?Math.floor(b/rh+1e-6):0;
+    const types=[];
+    const addT=(used,n)=>{const sig=used.map(u=>u.map(x=>x.toFixed(3)).join(',')).join('|');const t=types.find(t=>t.sig===sig);if(t)t.n+=n;else types.push({sig,used,n});};
+    const widths=[];for(let i=0;i<nc;i++)widths.push(i<nc-1?a:wl);
+    if(nf>0)widths.forEach(wd=>addT([[0,0,wd,b]],nf));
+    let nr=0;
+    if(rh>0){nr=Math.ceil(widths.length/k);for(let j=0;j<nr;j++)addT(widths.slice(j*k,j*k+k).map((wd,m)=>[0,m*rh,wd,rh]),1);}
+    const n=nc*nf+nr,joints=[];
+    for(let i=1;i<nc;i++){const x=i*a;vSegs(x).forEach(([p,t])=>joints.push({o:'v',x,a:p,b:t}));}
+    for(let m=1;m<=nf;m++){const y=m*b;if(y<c.H-1e-6)hSegs(y).forEach(([p,t])=>joints.push({o:'h',y,a:p,b:t}));}
+    const jl=sum(joints.map(j=>j.b-j.a)),bought=n*pl,waste=bought-An;
+    return{o,a,b,nc,wl,nf,rh,k,nr,n,types,joints,jl,bought,waste,pct:waste/bought};
+  }
+  const opts={v:layout('v'),h:layout('h')};
+  const best=opts.v.n!==opts.h.n?(opts.v.n<opts.h.n?'v':'h'):(opts.v.jl<=opts.h.jl?'v':'h');
+  const use=c.ori==='auto'?best:c.ori,Ly=opts[use],joints=Ly.joints,jl=Ly.jl;
+  /* parantes */
+  const nBase=Math.ceil(c.L/s-1e-6)+1;
+  const xs=[];for(let i=0;i<nBase-1;i++)xs.push(i*s);xs.push(c.L);
+  const studs=[...xs.map(x=>({x,segs:vSegs(x),jamb:false})),...vs.flatMap(v=>[{x:v.x1,segs:[[0,c.H]],jamb:true},{x:v.x2,segs:[[0,c.H]],jamb:true}])];
+  const nJ=2*vs.length,nPar=nBase+nJ;
+  /* tornillos sobre cada parante */
+  const screws=[];
+  studs.forEach(p=>p.segs.forEach(([a,b])=>{const len=b-a;if(len<.02)return;
+    const n=len<=.10?1:Math.ceil((len-.10)/c.st-1e-6)+1;
+    for(let i=0;i<n;i++)screws.push({x:p.x,y:n===1?(a+b)/2:a+.05+(len-.10)*i/(n-1)});}));
+  const spf=screws.length;
+  /* metrado */
+  const pzPar=Math.ceil(c.H/c.Lp-1e-6),parPz=nPar*pzPar*q,parMl=nPar*c.H*q;
+  const vent=vans.filter(v=>v.tipo==='V');
+  const rielMl=(2*c.L+sum(vent.map(v=>2*v.a)))*q,rielPz=Math.ceil(rielMl/c.Lr-1e-6);
+  const planchas=Math.ceil(Ly.n*c.caras*c.capas*q*(1+c.extra)-1e-6),placaM2=planchas*pl;
+  const util=An*c.caras*c.capas*q,wPct=1-util/placaM2;
+  const torP=spf*c.caras*c.capas*q,torE=nPar*c.te*q;
+  const perimV=sum(vans.map(v=>v.tipo==='P'?2*v.h+v.a:2*(v.a+v.h)));
+  const cJ=jl*c.caras,cEi=c.ei*c.H,cT=c.techo?c.L*c.caras:0,cV=c.vb==='cinta'?perimV*c.caras:0;
+  const cinta=(cJ+cEi+cT+cV)*q;
+  const eE=c.ee*c.H,eV=c.vb==='esq'?perimV*c.caras:0,esq=(eE+eV)*q;
+  const masilla=An*c.caras*c.ma*q;
+  const desc=c.descIn||`Muro drywall placa ${c.placa} ${c.esp} mm a ${c.caras} cara${c.caras>1?'s':''}, estructura ${w} @ ${f(s*100,0)}`;
+  const mat=[
+    {k:`pl-${c.placa}-${c.esp}`,label:`Placa ${c.placa} ${c.esp} mm (1.22 × 2.44)`,und:'m²',q:placaM2,pieza:pl,pz:'planchas'},
+    {k:`pa-${w}-${c.Lp}`,label:`Parante ${w} mm × ${f(c.Lp)} m`,und:'und',q:parPz},
+    {k:`ri-${w}-${c.Lr}`,label:`Riel ${w} mm`,und:'ml',q:rielMl,pieza:c.Lr,pz:`piezas de ${f(c.Lr)} m`},
+    {k:'tor-p',label:'Tornillo placa–perfil',und:'und',q:torP},
+    {k:'tor-e',label:'Tornillo perfil–perfil',und:'und',q:torE},
+    {k:'cinta',label:'Cinta de papel para juntas',und:'ml',q:cinta,pieza:75,pz:'rollo(s) de 75 m'}
+  ];
+  if(esq>0)mat.push({k:'esq',label:'Esquinero metálico',und:'ml',q:esq,pieza:3,pz:'piezas de 3.00 m'});
+  mat.push({k:'masilla',label:'Masilla para juntas',und:'kg',q:masilla});
+  if(c.lana)mat.push({k:'lana',label:'Lana de vidrio',und:'m²',q:area});
+  const oriName=o=>o==='v'?'Vertical':'Horizontal';
+  const lyTxt=L=>`${oriName(L.o)}: ⌈${f(c.L)} ÷ ${f(L.a)}⌉ = ${L.nc} columna${L.nc>1?'s':''} × ${L.nf} fila${L.nf===1?'':'s'} completa${L.nf===1?'':'s'}${L.rh?` + franja de ${f(L.rh)} m (${L.k} por plancha → ${L.nr})`:''} = ${B(L.n+' planchas')} · desperdicio ${f(L.pct*100,1)}%`;
+  const mem=[
+    {t:'Área bruta del muro',f:`L × H = ${f(c.L)} × ${f(c.H)} = ${B(f(Ab)+' m²')}`},
+    {t:'Vanos que se descuentan',f:vans.length?`${c.van.list.map(v=>`${v.n>1?v.n+' × ':''}${f(v.a)} × ${f(v.h)}`).join(' + ')} = ${B(f(Av)+' m²')}`:'Sin vanos = 0.00 m²'},
+    {t:'Metrado del muro (área neta)',f:`(${f(Ab)} − ${f(Av)}) × ${q} = ${R(f(area)+' m²')}`},
+    {t:'Estructura del plano',f:`«${esc($('d-est').value.trim())}» → parante de ${B(w+' mm')} @ ${B(f(s)+' m')}`},
+    {t:'Parantes',f:`⌈L ÷ s⌉ + 1 = ⌈${f(c.L)} ÷ ${f(s)}⌉ + 1 = ${B(nBase)} · + 2 por vano × ${vans.length} = ${B(nJ)} → ${R(nPar+' por muro')}<br>H = ${f(c.H)} m con parantes de ${f(c.Lp)} m → ${pzPar} pieza${pzPar>1?'s':''} c/u · ${nPar} × ${pzPar} × ${q} = ${R(parPz+' und')} (${f(parMl)} ml)`},
+    {t:'Rieles (piso, techo y vanos de ventana)',f:`2 × L${vent.length?` + 2 × ancho de ventanas`:''} = 2 × ${f(c.L)}${vent.length?` + 2 × (${vent.map(v=>f(v.a)).join(' + ')})`:''} = ${f(rielMl/q)} ml × ${q} = ${B(f(rielMl)+' ml')} → ⌈${f(rielMl)} ÷ ${f(c.Lr)}⌉ = ${R(rielPz+' piezas')}<br>En puertas el riel de piso se corta y se usa en el dintel`},
+    {t:'Despiece de planchas (una cara)',f:`${lyTxt(opts.v)}<br>${lyTxt(opts.h)}<br>Se usa ${R(oriName(use))}${c.ori==='auto'?' (automática: la de menor desperdicio)':''}`},
+    {t:`Placa ${c.placa} ${c.esp} mm`,f:`${Ly.n} por cara × ${c.caras} cara${c.caras>1?'s':''} × ${c.capas} capa${c.capas>1?'s':''} × ${q}${c.extra?` × ${f(1+c.extra)} (roturas)`:''} = ${R(planchas+' planchas')} = ${f(placaM2)} m²<br>útil ${f(util)} m² → desperdicio ${R(f(wPct*100,1)+'%')} (incluye recortes de vanos)`},
+    {t:'Tornillos placa–perfil (contados en el dibujo)',f:`uno cada ${f(c.st)} m en cada parante, a 5 cm de los bordes → ${B(spf+' por cara')}<br>${spf} × ${c.caras} cara${c.caras>1?'s':''} × ${c.capas} capa${c.capas>1?'s':''} × ${q} = ${R(torP+' und')}`},
+    {t:'Tornillos perfil–perfil',f:`${nPar} parantes × ${c.te} × ${q} = ${R(torE+' und')}`},
+    {t:'Cinta de papel',f:[`juntas del despiece: ${f(jl)} ml × ${c.caras} cara${c.caras>1?'s':''} = ${B(f(cJ))}`,
+      c.ei?`esquinas interiores: ${c.ei} × ${f(c.H)} = ${B(f(cEi))}`:'',
+      c.techo?`encuentro con techo: ${f(c.L)} × ${c.caras} = ${B(f(cT))}`:'',
+      cV?`bordes de vanos: ${f(perimV)} × ${c.caras} = ${B(f(cV))}`:''].filter(Boolean).join('<br>')+`<br>total × ${q} = ${R(f(cinta)+' ml')}`},
+    ...(esq>0?[{t:'Esquinero metálico',f:[c.ee?`esquinas exteriores: ${c.ee} × ${f(c.H)} = ${B(f(eE))}`:'',eV?`bordes de vanos: ${f(perimV)} × ${c.caras} = ${B(f(eV))}`:''].filter(Boolean).join('<br>')+`<br>total × ${q} = ${R(f(esq)+' ml')}`}]:[]),
+    {t:'Masilla (juntas y cabezas de tornillo)',f:`${f(An)} m² × ${c.caras} cara${c.caras>1?'s':''} × ${c.ma} kg/m² × ${q} = ${R(f(masilla)+' kg')}`}
+  ];
+  if(c.lana)mem.push({t:'Lana de vidrio',f:`área neta × cant = ${R(f(area)+' m²')}`});
+  return{c,tipo:'drywall',nombre:c.nombre,qty:q,desc,vans,vs,studs,screws,joints,spf,jl,nPar,nBase,area,An,Av,opts,best,use,Ly,mat,mem,steel:[],
+    tiles:[{v:f(area),u:'m²',l:'Muro drywall (neto)',dark:true},{v:planchas,u:'und',l:`Planchas ${c.placa} · ${oriName(use).toLowerCase()}`},{v:f(wPct*100,1),u:'%',l:'Desperdicio de placa'},{v:torP,u:'und',l:'Tornillos placa'},{v:f(cinta,1),u:'ml',l:'Cinta'},{v:f(masilla,1),u:'kg',l:'Masilla'}],
+    partidas:{muro:area}};
+}
+function svgDryElev(r){
+  const c=r.c,sh=c.show,W=780,sc=Math.min(660/c.L,300/c.H),wl=c.L*sc,hh=c.H*sc,x0=70+(660-wl)/2,y0=40,H=y0+hh+78,s=c.est.s;
+  const X=x=>x0+x*sc,Y=y=>y0+hh-y*sc;
+  const mw=Math.max(8,.20*sc),tw=Math.max(3,.05*sc);
+  let o=`<rect class="conc" x="${x0}" y="${y0}" width="${wl}" height="${hh}"/>`;
+  const band=(j,wd,cls)=>j.o==='v'
+    ?`<rect class="${cls}" x="${X(j.x)-wd/2}" y="${Y(j.b)}" width="${wd}" height="${(j.b-j.a)*sc}"/>`
+    :`<rect class="${cls}" x="${X(j.a)}" y="${Y(j.y)-wd/2}" width="${(j.b-j.a)*sc}" height="${wd}"/>`;
+  if(sh.mas)r.joints.forEach(j=>{o+=band(j,mw,'mud');});
+  r.joints.forEach(j=>{o+=j.o==='v'?`<line class="soil" x1="${X(j.x)}" y1="${Y(j.a)}" x2="${X(j.x)}" y2="${Y(j.b)}"/>`:`<line class="soil" x1="${X(j.a)}" y1="${Y(j.y)}" x2="${X(j.b)}" y2="${Y(j.y)}"/>`;});
+  if(sh.cin){
+    r.joints.forEach(j=>{o+=band(j,tw,'tape');});
+    if(c.techo)o+=`<rect class="tape" x="${x0}" y="${y0}" width="${wl}" height="${tw}"/>`;
+    const ends=[...Array(c.ei).fill('c'),...Array(c.ee).fill('e')];
+    ends.slice(0,2).forEach((t,i)=>{const x=i===0?x0:x0+wl-tw;
+      o+=t==='c'?`<rect class="tape" x="${x}" y="${y0}" width="${tw}" height="${hh}"/>`:`<line class="esqln" x1="${i===0?x0+1.5:x0+wl-1.5}" y1="${y0}" x2="${i===0?x0+1.5:x0+wl-1.5}" y2="${y0+hh}"/>`;});
+    if(ends.length>2)o+=`<text class="ta" x="${x0+wl}" y="${y0-6}" text-anchor="end">+${ends.length-2} esquina(s) más</text>`;
+  }
+  if(sh.est)r.studs.forEach(p=>p.segs.forEach(([a,b])=>{o+=`<line class="est"${p.jamb?' style="stroke-width:3"':''} x1="${X(p.x)}" y1="${Y(b)}" x2="${X(p.x)}" y2="${Y(a)}"/>`;}));
+  r.vs.forEach(v=>{
+    o+=`<rect x="${X(v.x1)}" y="${Y(v.top)}" width="${v.a*sc}" height="${v.h*sc}" style="fill:var(--sheet)" class="edge"/>`;
+    if(sh.est){o+=`<line class="bar" x1="${X(v.x1)}" y1="${Y(v.top)}" x2="${X(v.x2)}" y2="${Y(v.top)}"/>`;
+      if(v.bot>0)o+=`<line class="bar" x1="${X(v.x1)}" y1="${Y(v.bot)}" x2="${X(v.x2)}" y2="${Y(v.bot)}"/>`;}
+    if(sh.cin){const d=v.tipo==='P'?`M${X(v.x1)} ${Y(0)} V${Y(v.top)} H${X(v.x2)} V${Y(0)}`:`M${X(v.x1)} ${Y(v.bot)} V${Y(v.top)} H${X(v.x2)} V${Y(v.bot)} Z`;
+      o+=c.vb==='esq'?`<path class="esqln" d="${d}"/>`:`<path class="tapeln" style="stroke-width:${tw}" fill="none" d="${d}"/>`;}
+    o+=`<text class="tk" x="${X((v.x1+v.x2)/2)}" y="${Y((v.bot+v.top)/2)+4}" text-anchor="middle">${v.tipo} ${f(v.a)}×${f(v.h)}</text>`;
+  });
+  if(sh.mas&&sh.tor)r.screws.forEach(p=>{o+=`<circle class="mud" cx="${X(p.x)}" cy="${Y(p.y)}" r="4"/>`;});
+  if(sh.tor)r.screws.forEach(p=>{o+=`<circle class="scr" cx="${X(p.x)}" cy="${Y(p.y)}" r="1.8"/>`;});
+  if(sh.est){
+    o+=`<line class="bar" x1="${x0}" y1="${y0}" x2="${x0+wl}" y2="${y0}"/>`;
+    let bx=0;r.vs.filter(v=>v.tipo==='P').forEach(v=>{o+=`<line class="bar" x1="${X(bx)}" y1="${y0+hh}" x2="${X(v.x1)}" y2="${y0+hh}"/>`;bx=v.x2;});
+    o+=`<line class="bar" x1="${X(bx)}" y1="${y0+hh}" x2="${x0+wl}" y2="${y0+hh}"/>`;
+  }else o+=`<rect class="edge" x="${x0}" y="${y0}" width="${wl}" height="${hh}"/>`;
+  const yd=y0+hh+20;
+  o+=`<path class="dim" d="M${x0} ${yd} H${x0+wl} M${x0} ${yd-6} V${yd+6} M${x0+wl} ${yd-6} V${yd+6}"/><text class="tk" x="${x0+wl/2}" y="${yd+18}" text-anchor="middle">L = ${f(c.L)}</text>`;
+  const cap=[sh.est?`${r.nPar} parantes @ ${f(s)}`:'',sh.tor?`${r.spf} tornillos por cara`:'',`planchas en ${r.use==='v'?'vertical':'horizontal'}`].filter(Boolean).join(' · ');
+  o+=`<text class="ta" x="${x0+wl/2}" y="${yd+36}" text-anchor="middle">${cap}</text>`;
+  o+=`<path class="dim" d="M${x0-22} ${y0} V${y0+hh} M${x0-28} ${y0} H${x0-16} M${x0-28} ${y0+hh} H${x0-16}"/><text class="tk" x="${x0-28}" y="${y0+hh/2}" text-anchor="middle" transform="rotate(-90 ${x0-28} ${y0+hh/2})">H = ${f(c.H)}</text>`;
+  o+=`<text class="t" x="70" y="24">Elevación de una cara · juntas según el despiece de planchas de 1.22 × 2.44</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevación del muro drywall con parantes, tornillos, cinta y masilla">${o}</svg>`;
+}
+function svgCut(L){
+  const k=44,gap=24,W=340;let x=10,y=28,rowH=0,o='';
+  L.types.forEach(t=>{const w=L.a*k,h=L.b*k;
+    if(x+w>W-6&&x>10){x=10;y+=rowH+30;rowH=0;}
+    o+=`<rect class="waste" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+    t.used.forEach(u=>{o+=`<rect class="conc" style="stroke:none" x="${x+u[0]*k}" y="${y+u[1]*k}" width="${u[2]*k}" height="${u[3]*k}"/>`;});
+    t.used.forEach(u=>{if(t.used.length>1)o+=`<line class="edge" x1="${x}" y1="${y+(u[1]+u[3])*k}" x2="${x+u[2]*k}" y2="${y+(u[1]+u[3])*k}"/>`;});
+    o+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>`;
+    o+=`<text class="tk" x="${x+w/2}" y="${y+h+16}" text-anchor="middle">× ${t.n}</text>`;
+    rowH=Math.max(rowH,h);x+=w+gap;});
+  const H=y+rowH+24;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Despiece de planchas de una cara"><text class="t" x="10" y="16">Planchas de una cara · amarillo = sobrante</text>${o}</svg>`;
+}
+function svgDrySec(r){
+  const c=r.c,W=360,H=220,w=c.est.w,t=parseFloat(c.esp),k=Math.min(1.6,70/w),cw=w*k,tp=Math.max(5,t*k),yc=110-cw/2,x1=20,x2=300;
+  let o='';
+  if(c.lana)o+=`<rect x="${x1}" y="${yc}" width="${x2-x1}" height="${cw}" style="fill:var(--hi);opacity:.25"/>`;
+  for(let i=0;i<c.capas;i++){
+    o+=`<rect class="conc" x="${x1}" y="${yc-tp*(i+1)}" width="${x2-x1}" height="${tp}"/>`;
+    if(c.caras===2)o+=`<rect class="conc" x="${x1}" y="${yc+cw+tp*i}" width="${x2-x1}" height="${tp}"/>`;
+  }
+  [60,170,280].forEach(x=>{
+    o+=`<path class="estr" style="stroke-width:2" d="M${x-12} ${yc+1.5} H${x} V${yc+cw-1.5} H${x-12}"/>`;
+    o+=`<line class="bar" style="stroke-width:1.6" x1="${x-6}" y1="${yc-tp*c.capas-1}" x2="${x-6}" y2="${yc+8}"/>`;
+    if(c.caras===2)o+=`<line class="bar" style="stroke-width:1.6" x1="${x-6}" y1="${yc+cw-8}" x2="${x-6}" y2="${yc+cw+tp*c.capas+1}"/>`;
+  });
+  o+=`<path class="dim" d="M60 ${yc+cw/2} H170"/><text class="ta" x="115" y="${yc+cw/2-6}" text-anchor="middle">@ ${f(c.est.s)}</text>`;
+  o+=`<text class="t" x="${x1}" y="${yc-tp*c.capas-8}">Placa ${c.placa} ${c.esp} mm${c.capas>1?' × 2 capas':''}</text>`;
+  o+=`<path class="dim" d="M${x2+12} ${yc} V${yc+cw} M${x2+6} ${yc} H${x2+18} M${x2+6} ${yc+cw} H${x2+18}"/><text class="tk" x="${x2+22}" y="${yc+cw/2+4}">${w}</text>`;
+  const tot=w+t*c.capas*c.caras;
+  o+=`<text class="tk" x="${(x1+x2)/2}" y="${H-6}" text-anchor="middle">Corte en planta · espesor ≈ ${f(tot,1)} mm${c.lana?' · con lana':''}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Corte en planta del muro drywall">${o}</svg>`;
+}
+function svgDryJunta(r){
+  const c=r.c,W=380,H=230,yT=100,tp=26,xj=190;
+  let o='';
+  /* masilla en 3 capas, cada una más ancha */
+  o+=`<path class="mud" style="opacity:.45" d="M70 ${yT} Q${xj} ${yT-16} 310 ${yT} Z"/>`;
+  o+=`<path class="mud" style="opacity:.7" d="M115 ${yT} Q${xj} ${yT-11} 265 ${yT} Z"/>`;
+  /* placas con borde rebajado */
+  o+=`<path class="conc" d="M20 ${yT} H${xj-50} L${xj-2} ${yT+6} V${yT+tp} H20 Z"/>`;
+  o+=`<path class="conc" d="M360 ${yT} H${xj+50} L${xj+2} ${yT+6} V${yT+tp} H360 Z"/>`;
+  o+=`<path class="mud" d="M${xj-50} ${yT} L${xj-2} ${yT+6} H${xj+2} L${xj+50} ${yT} Z"/>`;
+  o+=`<line class="tapeln" x1="${xj-26}" y1="${yT+1.5}" x2="${xj+26}" y2="${yT+1.5}"/>`;
+  /* parante bajo la junta */
+  o+=`<path class="estr" style="stroke-width:2.2" d="M${xj+34} ${yT+tp+1} H${xj-34} V${yT+tp+62} H${xj+34}"/>`;
+  /* tornillos a cada lado de la junta */
+  [xj-20,xj+20].forEach(x=>{
+    o+=`<line class="bar" style="stroke-width:2" x1="${x}" y1="${yT+4}" x2="${x}" y2="${yT+tp+12}"/>`;
+    o+=`<path class="scr" d="M${x-5} ${yT+3} H${x+5} L${x} ${yT+8} Z"/>`;
+  });
+  const lab=(px,py,xa,y,txt,side)=>{const xe=side==='r'?372:8;
+    return `<path class="dim" d="M${px} ${py} L${xa} ${y} H${xe}"/><text class="tk" style="font-size:12px" x="${xe}" y="${y-5}" text-anchor="${side==='r'?'end':'start'}">${txt}</text>`;};
+  o+=lab(xj+8,yT+1,262,44,'Cinta de papel','r');
+  o+=lab(250,yT-4,232,70,'Masilla en 3 capas','r');
+  o+=lab(xj-20,yT+3,122,52,`Tornillo @ ${f(c.st)}`,'l');
+  o+=lab(60,yT+14,128,176,`Placa ${c.placa} ${c.esp} mm`,'l');
+  o+=lab(xj+34,yT+tp+40,262,196,`Parante ${c.est.w} mm`,'r');
+  o+=`<text class="t" x="${W/2}" y="20" text-anchor="middle">Detalle de junta entre placas (sin escala)</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Detalle de junta con cinta, masilla y tornillos">${o}</svg>`;
+}
+function matTable(mat,note){
+  const q=m=>m.und==='und'?String(Math.round(m.q)):f(m.q);
+  return `<div class="card"><h3>Materiales</h3><div class="tbl-wrap"><table>
+  <thead><tr><th>Material</th><th>Und</th><th class="n">Cantidad</th><th class="n">Para comprar</th></tr></thead>
+  <tbody>${mat.map(m=>`<tr><td>${esc(m.label)}</td><td>${m.und}</td><td class="n">${q(m)}</td><td class="n">${m.pieza?`${Math.ceil(m.q/m.pieza-1e-6)} ${m.pz}`:`${q(m)} ${m.und}`}</td></tr>`).join('')}</tbody></table></div>
+  <p style="font-size:12.5px;color:var(--ink-2)">${note}</p></div>`;
+}
+
+/* ---------- Salida común ---------- */
+function steelTable(rows){
+  const tot=sum(rows.map(r=>r.kg));
+  return `<div class="card"><h3>Planilla de acero</h3><div class="tbl-wrap"><table>
+  <thead><tr><th>Elemento</th><th>Ø</th><th class="n">Piezas</th><th class="n">Long. c/u (m)</th><th class="n">Long. total (m)</th><th class="n">kg/m</th><th class="n">Peso (kg)</th></tr></thead>
+  <tbody>${rows.map(r=>`<tr><td>${r.e}</td><td class="code">${DIAM[r.dk].label}</td><td class="n">${r.n}</td><td class="n">${f(r.L)}</td><td class="n">${f(r.n*r.L)}</td><td class="n">${f(DIAM[r.dk].w,3)}</td><td class="n">${f(r.kg)}</td></tr>`).join('')}</tbody>
+  <tfoot><tr><td colspan="6">Total acero</td><td class="n">${f(tot)}</td></tr></tfoot></table></div></div>`;
+}
+function memoria(m){return `<div class="card"><h3>Memoria de cálculo</h3><ol class="memoria">${m.map(x=>`<li><span class="mt">${x.t}</span><span class="mf">${x.f}</span></li>`).join('')}</ol></div>`;}
+function tiles(t){return `<div class="tiles">${t.map(x=>`<div class="tile${x.dark?' dark':''}"><span class="v">${x.v}<small>${x.u}</small></span><span class="l">${x.l}</span></div>`).join('')}</div>`;}
+
+const CURRENT={};
+function renderViga(){
+  const r=calcViga(),o=$('out-viga'),help=$('v-dist-help');
+  help.className='help'+(r.distErr?' err':'');help.textContent=r.distErr?r.err:'Igual que en el plano: 1@.05, 8@.10, rto@.25';
+  CURRENT.viga=r.err?null:r;
+  if(r.err){o.innerHTML=`<div class="errbox">${esc(r.err)}</div>`;return;}
+  const c=r.c;
+  o.innerHTML=tiles(r.tiles)+`<div class="sheet">
+    <div class="sheet-head"><h3>Esquema · ${esc(c.nombre)}</h3><span class="note">Se dibuja con tus medidas</span></div>
+    <div class="draw wide">${svgVigaElev(r)}</div>
+    <div class="draw-row">
+      <div style="flex:2 1 300px;display:flex;flex-direction:column;gap:10px;min-width:0">
+        <span class="pill"><b>${r.nE1}</b> estribos por viga · contados solos</span>
+        <p class="mf" style="font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)">${c.nTop} ${DIAM[c.dTop].label} arriba · ${c.nBot} ${DIAM[c.dBot].label} abajo<br>Estribos ${DIAM[c.dE].label}: ${esc(distText(c.dist))} c/extremo</p>
+        <div class="legend"><span><i></i>acero longitudinal</span><span><i class="a"></i>estribo</span><span><i class="c"></i>concreto</span></div>
+      </div>
+      <div class="draw" style="flex:1 1 220px;max-width:320px">${svgSecViga(r)}</div>
+    </div></div>`+steelTable(r.steel)+memoria(r.mem);
+}
+function renderColumna(){
+  const r=calcColumna(),o=$('out-columna'),help=$('c-dist-help');
+  help.className='help'+(r.distErr?' err':'');help.textContent=r.distErr?r.err:'Igual que en el plano: 1@.05, 6@.10, rto@.25';
+  CURRENT.columna=r.err?null:r;
+  if(r.err){o.innerHTML=`<div class="errbox">${esc(r.err)}</div>`;return;}
+  const c=r.c;
+  o.innerHTML=tiles(r.tiles)+`<div class="sheet">
+    <div class="sheet-head"><h3>Esquema · ${esc(c.nombre)}</h3><span class="note">Elevación sin escala horizontal</span></div>
+    <div class="draw-row"><div class="draw">${svgColElev(r)}</div><div class="draw">${svgColSec(r)}</div></div>
+    <span class="pill"><b>${r.k.total}</b> estribos por columna · ${c.qty} columnas = ${r.k.total*c.qty}</span>
+    <div class="legend"><span><i></i>acero longitudinal</span><span><i class="a"></i>estribo</span><span><i class="c"></i>concreto</span></div>
+    </div>`+steelTable(r.steel)+memoria(r.mem);
+}
+function renderZapata(){
+  const r=calcZapata(),o=$('out-zapata');
+  CURRENT.zapata=r.err?null:r;
+  if(r.err){o.innerHTML=`<div class="errbox">${esc(r.err)}</div>`;return;}
+  const c=r.c;
+  o.innerHTML=tiles(r.tiles)+`<div class="sheet">
+    <div class="sheet-head"><h3>Esquema · ${esc(c.nombre)}</h3><span class="note">Se dibuja con tus medidas</span></div>
+    <div class="draw-row"><div class="draw">${svgZapPlan(r)}</div><div class="draw">${svgZapSec(r)}</div></div>
+    <span class="pill"><b>${r.nA+r.nB}</b> barras por zapata · ${r.nA} en A + ${r.nB} en B</span>
+    <div class="legend"><span><i></i>barras paralelas a A</span><span><i class="a"></i>barras paralelas a B</span><span><i class="c"></i>concreto</span></div>
+    </div>`+steelTable(r.steel)+memoria(r.mem);
+}
+
+function oriCard(r,o){
+  const L=r.opts[o],name=o==='v'?'Vertical':'Horizontal',isBest=r.best===o,isUse=r.use===o;
+  return `<div class="ori${isUse?' on':''}">
+    <div class="ori-head"><h3>${name}</h3><div class="tags">${isBest?`<span class="tag good">${r.opts.v.n===r.opts.h.n?'Recomendada':'Menor desperdicio'}</span>`:''}${isUse?'<span class="tag">En uso</span>':''}</div></div>
+    <div class="draw">${svgCut(L)}</div>
+    <dl class="kv">
+      <dt>Planchas por cara</dt><dd>${L.n}</dd>
+      <dt>Comprado / útil</dt><dd>${f(L.bought)} / ${f(r.An)} m²</dd>
+      <dt>Desperdicio por cara</dt><dd><b>${f(L.waste)} m² · ${f(L.pct*100,1)}%</b></dd>
+      <dt>Juntas por cara</dt><dd>${f(L.jl)} ml</dd>
+    </dl>
+    ${isUse?'':`<button class="btn small ghost" type="button" data-ori="${o}">Usar ${name.toLowerCase()}</button>`}
+  </div>`;
+}
+function renderDrywall(){
+  const r=calcDrywall(),o=$('out-drywall'),hv=$('d-vanos-help'),he=$('d-est-help');
+  hv.className='help'+(r.vanErr?' err':'');hv.textContent=r.vanErr?r.err:'P = puerta, V = ventana. Ej: P 0.90x2.10, 2V 1.20x1.00';
+  he.className='help'+(r.estErr?' err':'');he.textContent=r.estErr?'Formato: 45 @ 15':'Ancho del parante en mm @ espaciado en cm';
+  CURRENT.drywall=r.err?null:r;
+  if(r.err){o.innerHTML=`<div class="errbox">${esc(r.err)}</div>`;return;}
+  const c=r.c,d=Math.abs(r.opts.v.n-r.opts.h.n);
+  const veredicto=d?`En horizontal sobran ${f(r.opts.h.waste)} m² por cara y en vertical ${f(r.opts.v.waste)} m². Conviene <b>${r.best==='v'?'vertical':'horizontal'}</b>: ahorras ${d} plancha${d>1?'s':''} por cara.`
+    :`Las dos colocaciones usan ${r.opts.v.n} planchas por cara. Se recomienda <b>${r.best==='v'?'vertical':'horizontal'}</b> porque deja menos juntas (${f(r.opts[r.best].jl)} ml contra ${f(r.opts[r.best==='v'?'h':'v'].jl)} ml).`;
+  o.innerHTML=tiles(r.tiles)+`<div class="sheet">
+    <div class="sheet-head"><h3>Esquema · ${esc(c.nombre)}</h3><span class="note">Ubicación de vanos referencial</span></div>
+    <div class="draw wide">${svgDryElev(r)}</div>
+    <span class="pill"><b>${r.spf}</b> tornillos por cara · <b>${r.Ly.n}</b> planchas por cara · contados solos</span>
+    <p style="font-weight:600">${esc(r.desc)}</p>
+    <div class="legend"><span><i class="a"></i>parante</span><span><i></i>riel</span><span><i class="s"></i>tornillo</span><span><i class="t"></i>cinta</span><span><i class="e"></i>esquinero</span><span><i class="m"></i>masilla</span><span><i class="c"></i>placa</span></div>
+    <div class="draw-row">
+      <div class="draw">${svgDryJunta(r)}</div>
+      <div class="draw">${svgDrySec(r)}</div>
+    </div></div>
+    <div class="card"><h3>Plancha vertical u horizontal</h3>
+      <p>${veredicto}</p>
+      <div class="ori-grid">${oriCard(r,'v')}${oriCard(r,'h')}</div>
+      <p style="font-size:12.5px;color:var(--ink-2)">Desperdicio = planchas compradas − área neta del muro. Incluye los recortes de vanos (${f(r.Av)} m² por cara). Los retazos de la franja superior se aprovechan cuando caben.</p>
+    </div>`+matTable(r.mat,`Planchas según el despiece${c.extra?` + ${f(c.extra*100,0)}% por roturas`:''}. Tornillos y cinta contados en el dibujo; la masilla usa un rendimiento referencial.`)+memoria(r.mem);
+  o.querySelectorAll('[data-ori]').forEach(b=>b.addEventListener('click',()=>{$('d-ori').value=b.dataset.ori;renderDrywall();persist();toast(`Planchas en ${b.dataset.ori==='v'?'vertical':'horizontal'}`);}));
+}
+
+/* ---------- Resumen ---------- */
+let RES=load(STORE_RES,[]);
+if(!Array.isArray(RES))RES=[];
+const TIPOS={zapata:'Zapatas',columna:'Columnas',viga:'Vigas',drywall:'Tabiquería drywall'};
+const SING={zapata:'zapata',columna:'columna',viga:'viga',drywall:'drywall'};
+const ORDEN=['zapata','columna','viga','drywall'];
+const PARTIDAS={
+  zapata:[['excavacion','Excavación manual de zanjas','m³'],['solado','Solado de concreto','m²'],['concreto','Concreto','m³'],['encofrado','Encofrado y desencofrado','m²'],['acero','Acero de refuerzo fy = 4200 kg/cm²','kg']],
+  columna:[['concreto','Concreto','m³'],['encofrado','Encofrado y desencofrado','m²'],['acero','Acero de refuerzo fy = 4200 kg/cm²','kg']],
+  viga:[['concreto','Concreto','m³'],['encofrado','Encofrado y desencofrado','m²'],['acero','Acero de refuerzo fy = 4200 kg/cm²','kg']],
+  drywall:[['muro','Muro drywall','m²']]
+};
+function snapshot(r){
+  const ad={};(r.steel||[]).forEach(s=>{ad[s.dk]=(ad[s.dk]||0)+s.kg;});
+  return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),tipo:r.tipo,nombre:r.nombre,qty:r.qty,fc:r.fc,desc:r.desc,partidas:r.partidas,aceroDiam:ad,mat:(r.mat||[]).map(m=>({...m}))};
+}
+function addCurrent(tipo){
+  const r=CURRENT[tipo];
+  if(!r){toast('Corrige los datos marcados antes de agregar.');return;}
+  RES.push(snapshot(r));save(STORE_RES,RES);renderResumen();
+  toast(`${r.nombre} agregado al resumen`);
+}
+function resumenRows(){
+  const rows=[];let gi=0;
+  for(const tipo of ORDEN){
+    const items=RES.filter(x=>x.tipo===tipo);if(!items.length)continue;gi++;
+    const g=String(gi).padStart(2,'0');rows.push({kind:'grp',code:g,desc:TIPOS[tipo]});
+    let pi=0;
+    for(const [key,name,und] of PARTIDAS[tipo]){
+      const groups=key==='muro'?[...new Set(items.map(x=>x.desc))].map(d=>({label:d,its:items.filter(x=>x.desc===d)})):key==='concreto'?[...new Set(items.map(x=>x.fc))].map(fc=>({label:`${name} f'c = ${fc} kg/cm²`,its:items.filter(x=>x.fc===fc)})):[{label:name,its:items}];
+      for(const gr of groups){
+        const its=gr.its.filter(x=>(x.partidas[key]||0)>0);if(!its.length)continue;pi++;
+        const tot=sum(its.map(x=>x.partidas[key]));
+        rows.push({kind:'par',code:`${g}.${String(pi).padStart(2,'0')}`,desc:gr.label,und,tot});
+        its.forEach(x=>rows.push({kind:'det',desc:`${x.nombre} × ${x.qty}`,und,tot:x.partidas[key]}));
+      }
+    }
+  }
+  return rows;
+}
+function renderResumen(){
+  $('badge').textContent=RES.length;
+  const o=$('out-resumen');
+  if(!RES.length){
+    o.innerHTML=`<div class="empty"><h2>El resumen está vacío</h2><p>Aquí se juntan las partidas de todos los elementos que agregues: concreto por f'c, encofrado, acero y movimiento de tierras. Abre Vigas, Columnas o Zapatas y pulsa «Agregar al resumen».</p><button class="btn ghost" type="button" id="load-ex">Cargar los 3 ejemplos</button></div>`;
+    $('load-ex').onclick=()=>{ORDEN.forEach(t=>{if(CURRENT[t])RES.push(snapshot(CURRENT[t]));});save(STORE_RES,RES);renderResumen();toast('Ejemplos cargados');};
+    return;
+  }
+  const rows=resumenRows();
+  const tot=k=>sum(RES.map(x=>x.partidas[k]||0));
+  const diam={};RES.forEach(x=>Object.entries(x.aceroDiam||{}).forEach(([d,kg])=>{diam[d]=(diam[d]||0)+kg;}));
+  const mats={};RES.forEach(x=>(x.mat||[]).forEach(m=>{const t=mats[m.k]||(mats[m.k]={...m,q:0});t.q+=m.q;}));
+  const matList=Object.values(mats);
+  const S=sup();
+  o.innerHTML=`<div class="out">
+  <div class="tiles">
+    <div class="tile dark"><span class="v">${f(tot('concreto'))}<small>m³</small></span><span class="l">Concreto total</span></div>
+    <div class="tile"><span class="v">${f(tot('encofrado'))}<small>m²</small></span><span class="l">Encofrado total</span></div>
+    <div class="tile"><span class="v">${f(tot('acero'),1)}<small>kg</small></span><span class="l">Acero total</span></div>
+    <div class="tile"><span class="v">${f(tot('excavacion'))}<small>m³</small></span><span class="l">Excavación</span></div>
+    ${tot('muro')>0?`<div class="tile"><span class="v">${f(tot('muro'))}<small>m²</small></span><span class="l">Muros drywall</span></div>`:''}
+  </div>
+  <div class="card">
+    <div class="res-top"><h3>Elementos agregados</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="button" id="copy-tsv">Copiar para Excel</button><button class="btn small ghost" type="button" id="clear-all">Vaciar</button></div></div>
+    <div class="chips">${RES.map(x=>`<span class="chip">${esc(x.nombre)} <em>${SING[x.tipo]||x.tipo} × ${x.qty}</em><button type="button" data-del="${x.id}" aria-label="Quitar ${esc(x.nombre)}">×</button></span>`).join('')}</div>
+    <div id="clear-confirm" hidden style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>¿Quitar los ${RES.length} elementos del resumen?</span><button class="btn small" type="button" id="clear-yes">Sí, vaciar</button><button class="btn small ghost" type="button" id="clear-no">Cancelar</button></div>
+    <textarea class="copyfallback" id="copy-fb" hidden readonly aria-label="Texto para copiar"></textarea>
+  </div>
+  <div class="card"><h3>Planilla de metrados · ${esc($('p-proy').value)}</h3><div class="tbl-wrap"><table>
+    <thead><tr><th>Ítem</th><th>Descripción</th><th>Und</th><th class="n">Metrado</th></tr></thead>
+    <tbody>${rows.map(r=>r.kind==='grp'?`<tr class="grp"><td>${r.code}</td><td colspan="3">${r.desc}</td></tr>`
+      :r.kind==='par'?`<tr class="par"><td class="code">${r.code}</td><td>${r.desc}</td><td>${r.und}</td><td class="n">${f(r.tot)}</td></tr>`
+      :`<tr class="det"><td></td><td>${esc(r.desc)}</td><td>${r.und}</td><td class="n">${f(r.tot)}</td></tr>`).join('')}</tbody>
+  </table></div></div>
+  ${Object.keys(diam).length?`<div class="card"><h3>Acero por diámetro</h3><div class="tbl-wrap"><table>
+    <thead><tr><th>Ø</th><th class="n">Peso (kg)</th><th class="n">kg/m</th><th class="n">Varillas de ${f(S.lc,0)} m</th></tr></thead>
+    <tbody>${DK.filter(d=>diam[d]).map(d=>`<tr><td class="code">${DIAM[d].label}</td><td class="n">${f(diam[d])}</td><td class="n">${f(DIAM[d].w,3)}</td><td class="n">${Math.ceil(diam[d]/(DIAM[d].w*S.lc))}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Total</td><td class="n">${f(sum(Object.values(diam)))}</td><td></td><td></td></tr></tfoot>
+  </table></div><p style="font-size:12.5px;color:var(--ink-2)">Varillas = peso ÷ (kg/m × ${f(S.lc,0)} m), redondeado hacia arriba. No incluye desperdicio.</p></div>`:''}
+  ${matList.length?matTable(matList,'Materiales de drywall sumados de todos los muros agregados.'):''}
+  </div>`;
+  o.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const it=RES.find(x=>x.id===b.dataset.del);RES=RES.filter(x=>x.id!==b.dataset.del);save(STORE_RES,RES);renderResumen();if(it)toast(`${it.nombre} quitado del resumen`);});
+  const cc=$('clear-confirm');
+  $('clear-all').onclick=()=>{cc.hidden=false;};
+  $('clear-no').onclick=()=>{cc.hidden=true;};
+  $('clear-yes').onclick=()=>{RES=[];save(STORE_RES,RES);renderResumen();toast('Resumen vaciado');};
+  $('copy-tsv').onclick=()=>{
+    const lines=[['Ítem','Descripción','Und','Metrado'].join('\t')];
+    rows.forEach(r=>{if(r.kind==='grp')lines.push(`${r.code}\t${r.desc}\t\t`);else if(r.kind==='par')lines.push(`${r.code}\t${r.desc}\t${r.und}\t${f(r.tot)}`);else lines.push(`\t   ${r.desc}\t${r.und}\t${f(r.tot)}`);});
+    if(matList.length){lines.push('','Materiales drywall\tUnd\tCantidad');matList.forEach(m=>lines.push(`${m.label}\t${m.und}\t${m.und==='und'?Math.round(m.q):f(m.q)}`));}
+    const txt=lines.join('\n'),fb=$('copy-fb');
+    const fallback=()=>{fb.hidden=false;fb.value=txt;fb.focus();fb.select();toast('Selecciona el texto y cópialo');};
+    try{navigator.clipboard.writeText(txt).then(()=>toast('Copiado. Pégalo en Excel'),fallback);}catch(e){fallback();}
+  };
+}
+
+/* ---------- Pestañas, guardado y eventos ---------- */
+const RENDER={viga:renderViga,columna:renderColumna,zapata:renderZapata,drywall:renderDrywall};
+const TABS=['vigas','columnas','zapatas','drywall','resumen'];
+function show(tab){
+  if(!TABS.includes(tab))tab='vigas';
+  TABS.forEach(t=>{$('tab-'+t).hidden=t!==tab;$('t-'+t).setAttribute('aria-selected',t===tab);});
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);try{history.replaceState(null,'','#'+b.dataset.tab);}catch(e){location.hash=b.dataset.tab;}}));
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+const saved=load(STORE_IN,{});
+document.querySelectorAll('.app input[id], .app select[id]').forEach(el=>{
+  if(!(el.id in saved))return;
+  if(el.type==='checkbox')el.checked=!!saved[el.id];else el.value=saved[el.id];
+});
+let saveT;
+function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{const o={};document.querySelectorAll('.app input[id], .app select[id]').forEach(el=>{if(el.id.startsWith('copy'))return;o[el.id]=el.type==='checkbox'?el.checked:el.value;});save(STORE_IN,o);},250);}
+
+document.querySelectorAll('[data-form]').forEach(p=>p.addEventListener('input',()=>{RENDER[p.dataset.form]();persist();}));
+document.querySelectorAll('[data-form]').forEach(p=>p.addEventListener('change',e=>{if(e.target.matches('select,input[type=checkbox]'))RENDER[p.dataset.form]();persist();}));
+$('sup').addEventListener('input',()=>{renderViga();renderColumna();renderZapata();renderDrywall();renderResumen();persist();});
+$('p-proy').addEventListener('input',()=>{persist();renderResumen();});
+document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>addCurrent(b.dataset.add)));
+
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+renderViga();renderColumna();renderZapata();renderDrywall();renderResumen();
+show(location.hash.slice(1));
+window.__metrados={parseDist,stirrups,calcViga,calcDrywall};
+})();
+</script>
+
+</body>
+</html>
